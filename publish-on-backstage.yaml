@@ -1,0 +1,10 @@
+---
+title: Kwirth Metrics for Backstage
+author: Julio Fernandez
+authorUrl: https://github.com/jfvilas
+category: Observability
+description: Kwirth Metrics for Backstage provides live-streaming Kubernetes metrics.
+documentation: https://github.com/jfvilas/kwirthbackstage-metrics
+iconUrl: https://raw.githubusercontent.com/jfvilas/kwirthbackstage-metrics/refs/heads/master/src/assets/kwirthmetrics-logo.png
+npmPackageName: '@jfvilas/plugin-kwirthbackstage-metrics'
+addedDate: 2025-04-14
