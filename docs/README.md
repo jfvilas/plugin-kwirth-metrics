@@ -3,8 +3,11 @@ This package is a Backstage plugin for **showing real-time streamed Kubernetes o
 
 
 ## Version compatibility
-+++ add table
-This very first version of KwirthMetrics is compatible with Kwirth core server version +++.
+This very first version of KwirthMetrics is compatible with Kwirth core server version **0.3.484**. Following table shows version compatibility between this plugin KwirthMetrics and Kwirth Core.
+
+| Plugin Kwirth version | Kwirth version |
+|-|-|
+|0.0.1|0.3.484|
 
 ## What for?
 This Backstage plugin allows you viewing Kubernetes metrics in real time that are linked to your Backstage entities. It's very important to understand that for this plugin to work you need to install Kwirth on your Kubernetes cluster (aside from Kwirth Backstage backend plugin), that is, this plugin is just another front end for [Kwirth](https://jfvilas.github.io/kwirth).
@@ -265,7 +268,7 @@ Please check the examples below to understand how each one of these will behave:
 **Merge**
 ![kwirthmetrics-merge](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-merge.png)
 
-**MErge and Stack**
+**Merge and Stack**
 ![kwirthmetrics-merge-stack](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-merge-stack.png)
 
 
