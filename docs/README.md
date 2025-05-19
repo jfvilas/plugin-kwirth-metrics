@@ -145,6 +145,7 @@ Just *select the cluster* on the cluster card and eventually set the *options* y
 
 Feel free to open issues and ask for more features.
 
+
 ## Status information
 When the metrics stream starts, and all along the life of the stream (until it gets stopped or the window is closed), you will receive status information regarding the pods and containers you are watching. This status information is shown on the top of the card (just at the immediate right of the cluster name) including 3 kinds of information:
 
