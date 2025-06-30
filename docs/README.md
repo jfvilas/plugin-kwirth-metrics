@@ -36,7 +36,6 @@ This frontend plugin includes just the visualization of metrics charts. All need
 The ability to restart pods is also configured in the app-config (YAML, env or whatever), and **restartig permissions are set independently than chart streaming permissions**.
 The backend plugin is the only responsible for configuration and permissionism, all the capabilities related with chart showing are implemented in the frontend plugin, who establishes the connections to the corresponding Kwirth instances (running inside your Kubernetes clusters).
 
-
 ## How does it work?
 Let's explain this by following a user working sequence:
 
@@ -260,7 +259,7 @@ When you select more than one asset, **and the chart type is set to Bar or Area*
   - **Merge**, values of differnte sources (same metric but different source object) will be shonw in the same chart.
   - **Stack**, if you've selected 'merge', you can decide to show stacked original values, or just show a sum of all the values on each sample.
 
-Please check the examples below to understand how each one of these will behave:
+Check the examples below to understand how each one of these will behave:
 
 **Aggregate**
 ![kwirthmetrics-aggregate](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-aggregate.png)
@@ -272,3 +271,30 @@ Please check the examples below to understand how each one of these will behave:
 ![kwirthmetrics-merge-stack](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-merge-stack.png)
 
 
+## Metrics options
+In addition to chart options, you can also decide what matrics you want to offer to your users. By default, Kwirth allows users to use this metrics on charts:
+  - kwirth_cluster_container_memory_percentage, % of used memory in relation with whole cluster
+  - kwirth_cluster_container_cpu_percentage, % of used CPU in relation with whole cluster
+  - kwirth_cluster_container_transmit_percentage, % of bytes sent in relation with the whole cluster
+  - kwirth_cluster_container_receive_percentage, % of bytes received in relation with the whole cluster
+  - kwirth_cluster_container_transmit_mbps, Mbps sent by selected object/s
+  - kwirth_cluster_container_receive_mbps, Mbps received by selected object/s
+
+It is very important to understand that these metrics are computed according to selected object. I mean, if you select several pods, the % of CPU, for example, is calculated as the % of CPU tat all selected pods represent in relation with the whole cluster. And the same can be applied to memory, transmit percentage and receive percentage.
+
+If you want to offer your Backstage users a more granular metrics selection you can enable the 'allMetrics' property so Kwirth will offer the user the abiity to choose between a longer range of metrics, the ones offered by your kubelet cluster. For achieving this, you only need to add the property as shown below.
+
+```jsx
+// Note: Add to any other Pages as well (e.g. defaultEntityPage or webSiteEntityPage, for example)
+const serviceEntityPage = (
+  <EntityLayout>
+
+    {/* other tabs... */}
+    <EntityLayout.Route if={isKwirthAvailable} path="/kwirthmetrics" title="KwirthMetrics">
+      <EntityKwirthMetricsContent enableRestart={false} allMetrics={true}/>
+    </EntityLayout.Route>
+  </EntityLayout>
+)
+```
+
++++ metrics list

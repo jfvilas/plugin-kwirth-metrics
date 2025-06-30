@@ -23,7 +23,7 @@ import { MissingAnnotationEmptyState, useEntity } from '@backstage/plugin-catalo
 
 // kwirthMetrics
 import { kwirthMetricsApiRef } from '../../api'
-import { accessKeySerialize, MetricsConfigModeEnum, MetricsMessage, InstanceMessageActionEnum, InstanceMessageFlowEnum, InstanceConfigScopeEnum, InstanceConfigViewEnum, InstanceMessage, InstanceMessageTypeEnum, SignalMessage, SignalMessageLevelEnum, InstanceConfigObjectEnum, InstanceConfig, InstanceMessageChannelEnum, OpsCommandEnum, OpsMessage, RouteMessage, OpsMessageResponse } from '@jfvilas/kwirth-common'
+import { accessKeySerialize, MetricsConfigModeEnum, MetricsMessage, InstanceMessageActionEnum, InstanceMessageFlowEnum, InstanceConfigScopeEnum, InstanceConfigViewEnum, InstanceMessage, InstanceMessageTypeEnum, SignalMessage, SignalMessageLevelEnum, InstanceConfigObjectEnum, InstanceConfig, InstanceMessageChannelEnum, OpsCommandEnum, IOpsMessageResponse, IOpsMessage, IRouteMessage } from '@jfvilas/kwirth-common'
 
 // kwirthMetrics components
 import { ComponentNotFound, ErrorType } from '../ComponentNotFound'
@@ -34,7 +34,7 @@ import { ShowError } from '../ShowError'
 import { StatusLog } from '../StatusLog'
 
 // Material-UI
-import { Checkbox, FormControl, Grid, MenuItem, Select } from '@material-ui/core'
+import { Box, Checkbox, FormControl, Grid, MenuItem, Select } from '@material-ui/core'
 import { Card, CardHeader, CardContent } from '@material-ui/core'
 import Divider from '@material-ui/core/Divider'
 import IconButton from '@material-ui/core/IconButton'
@@ -72,7 +72,7 @@ export const EntityKwirthMetricsContent = (props:{
     const [statusMessages, setStatusMessages] = useState<IStatusLine[]>([])
     const [websocket, setWebsocket] = useState<WebSocket>()
     const [instance, setInstance] = useState<string>()
-    const kwirthMetricsOptionsRef = useRef<MetricsOptions>({depth:10, width:3, interval:10, chart:'line', aggregate:false, merge:false, stack:false })
+    const kwirthMetricsOptionsRef = useRef<MetricsOptions>({depth:10, width:3, interval:10, chart:'area', aggregate:false, merge:false, stack:false })
     const [showStatusDialog, setShowStatusDialog] = useState(false)
     const [statusLevel, setStatusLevel] = useState<SignalMessageLevelEnum>(SignalMessageLevelEnum.INFO)
     const [backendVersion, setBackendVersion ] = useState<string>('')
@@ -81,7 +81,6 @@ export const EntityKwirthMetricsContent = (props:{
     [
         {metric:'kwirth_cluster_container_memory_percentage',help:'',eval:'',type:'counter'},
         {metric:'kwirth_cluster_container_cpu_percentage',help:'',eval:'',type:'counter'},
-        {metric:'kwirth_cluster_container_transmit_percentage',help:'',eval:'',type:'counter'},
         {metric:'kwirth_cluster_container_transmit_percentage',help:'',eval:'',type:'counter'},
         {metric:'kwirth_cluster_container_receive_percentage',help:'',eval:'',type:'counter'},
         {metric:'kwirth_cluster_container_transmit_mbps',help:'',eval:'',type:'counter'},
@@ -93,7 +92,6 @@ export const EntityKwirthMetricsContent = (props:{
         if (props.enableRestart) reqScopes.push(InstanceConfigScopeEnum.RESTART)
         let data = await kwirthMetricsApi.requestAccess(entity,'metrics', reqScopes)
         setClusterValidPods(data)
-        console.log('setresourcesdata',data)
     })
 
     const colours = [
@@ -167,7 +165,6 @@ export const EntityKwirthMetricsContent = (props:{
             setStatusMessages([])
             clickStop()
             let cluster = clusterValidPods.find(cluster => cluster.name === clusterName)
-            console.log('cmet', clusterName, 'c', cluster)
             if (cluster && cluster.metrics) setAllMetrics(cluster.metrics)
         }
     }
@@ -176,16 +173,22 @@ export const EntityKwirthMetricsContent = (props:{
         let instanceMessage = JSON.parse(wsEvent.data) as InstanceMessage
         switch (instanceMessage.type) {
             case InstanceMessageTypeEnum.DATA:
-                var metricsMessage = instanceMessage as MetricsMessage
-                setMetricsMessages((prev) => {
-                    while (prev.length>kwirthMetricsOptionsRef.current.depth) {
-                        prev.splice(0,1)
-                    }
-                    if (paused.current)
-                        return prev
-                    else
-                        return [ ...prev, metricsMessage ]
-                })
+                let metricsMessage = instanceMessage as MetricsMessage
+                if (metricsMessage.timestamp===0) {  // initial metrics values
+                    metricsMessage.timestamp = Date.now()
+                    setMetricsMessages([metricsMessage])
+                }
+                else {
+                    setMetricsMessages((prev) => {
+                        while (prev.length>kwirthMetricsOptionsRef.current.depth) {
+                            prev.splice(0,1)
+                        }
+                        if (paused.current)
+                            return prev
+                        else
+                            return [ ...prev, metricsMessage ]
+                    })
+                }
                 break
             case InstanceMessageTypeEnum.SIGNAL:
                 if (instanceMessage.flow === InstanceMessageFlowEnum.RESPONSE && instanceMessage.action === InstanceMessageActionEnum.START) {
@@ -218,7 +221,7 @@ export const EntityKwirthMetricsContent = (props:{
                 processMetricsMessage(wsEvent)
                 break
             case InstanceMessageChannelEnum.OPS:
-                let opsMessage = instanceMessage as OpsMessageResponse
+                let opsMessage = instanceMessage as IOpsMessageResponse
                 if (opsMessage.data?.data) 
                     addMessage (SignalMessageLevelEnum.WARNING, 'Operations message: '+opsMessage.data.data)
                 else
@@ -265,7 +268,7 @@ export const EntityKwirthMetricsContent = (props:{
                 view: (selectedContainerNames.length > 0 ? InstanceConfigViewEnum.CONTAINER : InstanceConfigViewEnum.POD),
                 namespace: selectedNamespaces.join(','),
                 group: '',
-                pod: selectedPodNames.map(p => p).join(','),
+                pod: selectedPodNames.join(','),
                 container: containers.join(','),
                 data: {
                     mode: MetricsConfigModeEnum.STREAM,
@@ -316,7 +319,6 @@ export const EntityKwirthMetricsContent = (props:{
 
     const onChangeOptions = (options:MetricsOptions) => {
         kwirthMetricsOptionsRef.current=options
-        console.log(options)
         setRefresh(Math.random())
     }
  
@@ -354,7 +356,7 @@ export const EntityKwirthMetricsContent = (props:{
         let disabled = selectedClusterName === '' || selectedNamespaces.length === 0
         return (
             <FormControl style={{marginLeft:16, width:'300px'}} size='small'>
-                <Select value={selectedMetrics} MenuProps={{variant:'menu'}} multiple onChange={onMetricsChange} renderValue={(selected) => (selected as string[]).join(', ')} disabled={disabled}>
+                <Select value={selectedMetrics} MenuProps={{variant:'menu'}} multiple onChange={onMetricsChange} renderValue={(selected) => (selected as string[]).join(', ')} disabled={disabled || started}>
                     {
                         allMetrics.map(m => 
                             <MenuItem key={m.metric} value={m.metric} style={{marginTop:'-6px', marginBottom:'-6px'}}>
@@ -407,10 +409,12 @@ export const EntityKwirthMetricsContent = (props:{
         var resultSeries:any[] = []
 
         for (var i=0; i<series[0].length; i++) {
-            var item: { [key: string]: any } = {}
+            var item: { [key: string]: string|number } = {}
             for (var j=0; j<series.length; j++ ) {
-                item['timestamp'] =  series[0][i].timestamp
-                item[names[j]] = series[j][i].value
+                if (series[j][i]) {
+                    item['timestamp'] =  series[0][i].timestamp
+                    item[names[j]] = series[j][i].value
+                }
             }
             resultSeries.push(item)
         }
@@ -524,7 +528,7 @@ export const EntityKwirthMetricsContent = (props:{
                 return <Typography>Select namespace chip on top.</Typography>
             else
                 return <>
-                    {started?<Typography>Wait {options.interval} seconds for first data...</Typography>:<Typography>Configure <b>chart options</b>, select some <b>metrics on top</b>, and <b>press PLAY</b> on top-right button to start viewing.</Typography>}
+                    {started?<Typography>Waiting for first data, be patient...</Typography>:<Typography>Configure <b>chart options</b>, select some <b>metrics on top</b>, and <b>press PLAY</b> on top-right button to start viewing.</Typography>}
                 </>
         }
 
@@ -599,7 +603,6 @@ export const EntityKwirthMetricsContent = (props:{
     }
 
     const addMessage = (level:SignalMessageLevelEnum, text:string) => {
-        console.log(text)
         setStatusMessages ((prev) => [...prev, {
             level,
             text,
@@ -608,7 +611,7 @@ export const EntityKwirthMetricsContent = (props:{
     }
 
     const onClickRestart = () => {
-        // we perform a route command from channel 'log' to channel 'ops'
+        // we perform a route command from channel 'metrics' to channel 'ops'
         let cluster=clusterValidPods.find(cluster => cluster.name===selectedClusterName)
         if (!cluster) {
             addMessage(SignalMessageLevelEnum.ERROR,'No cluster selected')
@@ -627,7 +630,7 @@ export const EntityKwirthMetricsContent = (props:{
 
         let pods:PodData[] = (cluster.data as PodData[]).filter(pod => selectedNamespaces.includes(pod.namespace))
         for (let pod of pods) {
-            let om:OpsMessage = {
+            let om:IOpsMessage = {
                 msgtype: 'opsmessage',
                 action: InstanceMessageActionEnum.COMMAND,
                 flow: InstanceMessageFlowEnum.IMMEDIATE,
@@ -642,7 +645,7 @@ export const EntityKwirthMetricsContent = (props:{
                 pod: pod.name,
                 container: ''
             }
-            let rm: RouteMessage = {
+            let rm: IRouteMessage = {
                 msgtype: 'routemessage',
                 accessKey: accessKeySerialize(restartKey),
                 destChannel: InstanceMessageChannelEnum.OPS,
@@ -679,8 +682,8 @@ export const EntityKwirthMetricsContent = (props:{
         }
 
         { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length>0 && clusterValidPods.reduce((sum,cluster) => sum+cluster.data.length, 0)>0 &&
-            <Grid container direction="row" style={{height:'100%'}}>
-                <Grid container item style={{width:'15%'}}>
+            <Box sx={{ display: 'flex'}}>
+                <Box sx={{ width: '200px'}}>
                     <Grid container direction='column'>
                         <Grid item>
                             <Card>
@@ -693,9 +696,9 @@ export const EntityKwirthMetricsContent = (props:{
                             </Card>
                         </Grid>
                     </Grid>
-                </Grid>
 
-                <Grid item style={{width:'85%'}}>
+                </Box>
+                <Box sx={{ flexGrow: 1, p:1 }}>
 
                     { !selectedClusterName && 
                         <img src={KwirthMetricsLogo} alt="No cluster selected" style={{ left:'40%', marginTop:'10%', width:'20%', position:'relative' }} />
@@ -718,9 +721,8 @@ export const EntityKwirthMetricsContent = (props:{
                             </CardContent>
                         </Card>
                     </>}
-
-                </Grid>
-            </Grid>
+                </Box>                
+            </Box>
         }
 
         { showStatusDialog && <StatusLog level={statusLevel} onClose={() => setShowStatusDialog(false)} statusMessages={statusMessages} onClear={statusClear}/>}
