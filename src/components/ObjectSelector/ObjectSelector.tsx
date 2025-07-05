@@ -113,7 +113,7 @@ const ObjectSelector = (props: IProps) => {
             <Grid container item xs={12} spacing={2}>
                 <Grid item xs={6}>
                     <FormControl size='small' fullWidth>
-                        <Select value={props.selectedPodNames} multiple onChange={onPodNameChange} renderValue={(selected) => (selected as string[]).join(', ')} disabled={props.disabled || props.selectedNamespaces.length===0 || getPodList().length===1}>
+                        <Select value={props.selectedPodNames} MenuProps={{variant:'menu'}} multiple onChange={onPodNameChange} renderValue={(selected) => (selected as string[]).join(', ')} disabled={props.disabled || props.selectedNamespaces.length===0 || getPodList().length===1}>
                             {
                                 getPodList().map(pod => {
                                     return (
@@ -129,7 +129,7 @@ const ObjectSelector = (props: IProps) => {
                 </Grid>
                 <Grid item xs={6}>
                     <FormControl size='small' fullWidth>
-                        <Select value={props.selectedContainerNames} multiple onChange={onContainerNameChange} renderValue={(selected) => (selected as string[]).join(', ')} disabled={props.disabled || props.selectedPodNames.length===0 || getContainerList().length===1}>
+                        <Select value={props.selectedContainerNames} MenuProps={{variant:'menu'}} multiple onChange={onContainerNameChange} renderValue={(selected) => (selected as string[]).join(', ')} disabled={props.disabled || props.selectedPodNames.length===0 || getContainerList().length===1}>
                             {
                                 getContainerList().map(container => {
                                     return (
