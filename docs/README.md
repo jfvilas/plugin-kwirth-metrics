@@ -273,12 +273,12 @@ Check the examples below to understand how each one of these will behave:
 
 ## Metrics options
 In addition to chart options, you can also decide what matrics you want to offer to your users. By default, Kwirth allows users to use this metrics on charts:
-  - kwirth_cluster_container_memory_percentage, % of used memory in relation with whole cluster
-  - kwirth_cluster_container_cpu_percentage, % of used CPU in relation with whole cluster
-  - kwirth_cluster_container_transmit_percentage, % of bytes sent in relation with the whole cluster
-  - kwirth_cluster_container_receive_percentage, % of bytes received in relation with the whole cluster
-  - kwirth_cluster_container_transmit_mbps, Mbps sent by selected object/s
-  - kwirth_cluster_container_receive_mbps, Mbps received by selected object/s
+  - kwirth_container_memory_percentage, % of used memory in relation with whole cluster
+  - kwirth_container_cpu_percentage, % of used CPU in relation with whole cluster
+  - kwirth_container_transmit_percentage, % of bytes sent in relation with the whole cluster
+  - kwirth_container_receive_percentage, % of bytes received in relation with the whole cluster
+  - kwirth_container_transmit_mbps, Mbps sent by selected object/s
+  - kwirth_container_receive_mbps, Mbps received by selected object/s
 
 It is very important to understand that these metrics are computed according to selected object. I mean, if you select several pods, the % of CPU, for example, is calculated as the % of CPU tat all selected pods represent in relation with the whole cluster. And the same can be applied to memory, transmit percentage and receive percentage.
 

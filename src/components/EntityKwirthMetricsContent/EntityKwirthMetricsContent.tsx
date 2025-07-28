@@ -80,12 +80,12 @@ export const EntityKwirthMetricsContent = (props:{
     const [_refresh,setRefresh] = useState(0)
     const [allMetrics, setAllMetrics] = useState<MetricDefinition[]>(
     [
-        {metric:'kwirth_cluster_container_memory_percentage',help:'',eval:'',type:'counter'},
-        {metric:'kwirth_cluster_container_cpu_percentage',help:'',eval:'',type:'counter'},
-        {metric:'kwirth_cluster_container_transmit_percentage',help:'',eval:'',type:'counter'},
-        {metric:'kwirth_cluster_container_receive_percentage',help:'',eval:'',type:'counter'},
-        {metric:'kwirth_cluster_container_transmit_mbps',help:'',eval:'',type:'counter'},
-        {metric:'kwirth_cluster_container_receive_mbps',help:'',eval:'',type:'counter'}
+        {metric:'kwirth_container_memory_percentage',help:'',eval:'',type:'counter'},
+        {metric:'kwirth_container_cpu_percentage',help:'',eval:'',type:'counter'},
+        {metric:'kwirth_container_transmit_percentage',help:'',eval:'',type:'counter'},
+        {metric:'kwirth_container_receive_percentage',help:'',eval:'',type:'counter'},
+        {metric:'kwirth_container_transmit_mbps',help:'',eval:'',type:'counter'},
+        {metric:'kwirth_container_receive_mbps',help:'',eval:'',type:'counter'}
     ])
     const { loading, error } = useAsync ( async () => {
         if (backendVersion==='') setBackendVersion(await kwirthMetricsApi.getVersion())
@@ -166,7 +166,10 @@ export const EntityKwirthMetricsContent = (props:{
             setStatusMessages([])
             clickStop()
             let cluster = clusterValidPods.find(cluster => cluster.name === clusterName)
-            if (cluster && cluster.metrics) setAllMetrics(cluster.metrics)
+            if (cluster && cluster.metrics) {
+                cluster.metrics.sort( (a,b) => a.metric.startsWith('kwirth')? -1:1)
+                setAllMetrics(cluster.metrics)
+            }
         }
     }
 

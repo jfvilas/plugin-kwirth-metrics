@@ -34,13 +34,7 @@ const ObjectSelector = (props: IProps) => {
 
         props.selectedContainerNames.splice(0,props.selectedContainerNames.length)
         let containers = getContainerList()
-        // if (containers.length===1) {
-        //     props.selectedContainerNames.push(...containers)
-        //     props.onSelect([...props.selectedNamespaces], [...props.selectedPodNames], [...props.selectedContainerNames])
-        // }
-        if (containers.length===1) {
-            props.selectedContainerNames.push(...containers)
-        }
+        if (containers.length===1) props.selectedContainerNames.push(...containers)
         props.onSelect([...props.selectedNamespaces], [...props.selectedPodNames], [...props.selectedContainerNames])
         setRender(!render)
     };
