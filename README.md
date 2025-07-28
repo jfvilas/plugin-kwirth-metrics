@@ -1,16 +1,21 @@
 # KwirthMetrics Plugin
-This package is a Backstage plugin for **showing real-time streamed Kubernetes objects' metrics** and perform **somae basic pod operations** via [Kwirth](https://jfvilas.github.io/kwirth).
+This package is a Backstage plugin for **showing real-time streamed Kubernetes objects' metrics** and perform **some basic pod operations** via [Kwirth](https://jfvilas.github.io/kwirth).
 
 
 ## Version compatibility
-+++ add table
-This very first version of KwirthMetrics is compatible with Kwirth core server version +++.
+This very first version of KwirthMetrics is compatible with Kwirth core server versions according to following table.
+
+| Plugin Kwirth version | Kwirth version |
+|-|-|
+|0.0.1|0.4.20|
+
+
 
 ## What for?
-This Backstage plugin allows you viewing Kubernetes metrics in real time that are linked to your Backstage entities. It's very important to understand that for this plugin to work you need to install Kwirth on your Kubernetes cluster (aside from Kwirth Backstage backend plugin), that is, this plugin is just another front end for [Kwirth](https://jfvilas.github.io/kwirth).
+This Backstage plugin allows you viewing **Kubernetes metrics** in real time that are linked to your Backstage entities. It's very important to understand that for this plugin to work you need to install Kwirth on your Kubernetes cluster (aside from Kwirth Backstage backend plugin), that is, this plugin is just another frontend for [Kwirth](https://jfvilas.github.io/kwirth).
 
-In this very first versoin of KwirthMetrics you will be able to perform this actions:
-  - Show real-time metrics of a source container (you can select which container to view)
+In this very first versoin of KwirthMetrics you will be able to perform at least this actions:
+  - Show real-time metrics of a source container (you can select which containers to view)
   - Show real-time metrics of a source pod (including all its containers)
   - Show real-time metrics of a set of pods (you can select what pods to chart)
   - Restarting a kubernetes object (pod, set of pods or just a simple container). This capability is not designed to substitute your operation tools, it is just a way for your developers, for example, to self-solve restarting-pod needs without the complexity of giving them access to Lens, K9s, Headlamp or kubectl.
@@ -20,18 +25,18 @@ Kwirth is a really-easy-to-use data-exporting platform for Kubernetes that runs 
 In addition, you can access [Kwirth project here](https://github.com/jfvilas/kwirth).
 
 ## What is this plugin for?
-This Backstage plugin adds Backstage a feature for showing **real-time** charts of metrics from your Kubernetes objects.You can show this charts directly inside your Backstage frontend application. The plugin will be enabled for any entity that is correctly tagged (according to Backstage Kubernetes core feature) and its correpsonding Kubernetes resources are found on any of the clusters that have been added to Backstage.
+This Backstage plugin adds Backstage a feature for showing **real-time charts showing of metrics** about your Kubernetes objects and its **resource consumption**.You can show this charts *directly inside your Backstage frontend* application. The plugin will be enabled for any entity that is correctly tagged (according to Backstage Kubernetes core feature) and its correpsonding Kubernetes resources are found on any of the clusters that have been added to Backstage.
 
 In addition, Backstage users can **restart pods** if they are allowed to (according to KwirthMetrics and KwirthOps permissions).
 
 When KwirthMetrics is correctly installed and configured, it is possible to stream and chart real-time Kubernetes metrics to your Backstage like in this sample we show here:
 
-+++![kwirthmetrics-running](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-running.png)
+![kwirthmetrics-running](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-running.png)
 
-This frontend plugin includes just the visualization of metrics charts. All needed configuration, and specially all **permission settings** are done in the backend plugin and the app-config YAML. You can restrict access to pods, namespaces, clusters, etc. by configuring permissions to be applied by the backend plugin.
+This frontend plugin **includes just the visualization of metrics** charts. All needed configuration, and specially all **permission settings** are done in the backend plugin and the app-config YAML. You can restrict access to pods, namespaces, clusters, etc. by configuring permissions to be applied by the backend plugin.
 
 The ability to restart pods is also configured in the app-config (YAML, env or whatever), and **restartig permissions are set independently than chart streaming permissions**.
-The backend plugin is the only responsible for configuration and permissionism, all the capabilities related with chart showing are implemented in the frontend plugin, who establishes the connections to the corresponding Kwirth instances (running inside your Kubernetes clusters).
+The backend plugin is the only responsible for configuration and permissionism, all the capabilities related with showing charts are implemented in the frontend plugin, which is in charge of establishing the connections to the corresponding Kwirth instances (running inside your Kubernetes clusters).
 
 
 ## How does it work?
@@ -48,7 +53,8 @@ Let's explain this by following a user working sequence:
 
 If everyting is correctly configured and tagged, the user should see a list of clusters similar to the one we show bellow. When selecting a cluster, the user should see a list of namespaces where the entity is running and is elligible for showing metrics charts.
 
-+++ image cluster list
+![kwirthmetrics-clusterslist](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-clusterslist.png)
+
 
 ## Installation
 1. Install corresponding Backstage backend plugin [more information here](https://www.npmjs.com/package/@jfvilas/plugin-kwirth-backend). The backend plugin of Kwirth is **shared with all front end plugins**, so you only need to install backend plugin once.
@@ -241,7 +247,7 @@ Set the number of charts you want to be shown on each line. If you have selected
 Number of seconds between samples. Take into account that this interval is not the real cluster metrics smple rate, which must be set inside Kwirth core for each cluster.
 
 ### Depth
-Number of values to hold
+Number of values to hold on screen.
 
 ### Chart
 Select the cart type to use:
@@ -267,5 +273,3 @@ Please check the examples below to understand how each one of these will behave:
 
 **MErge and Stack**
 ![kwirthmetrics-merge-stack](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-merge-stack.png)
-
-
