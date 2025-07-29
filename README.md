@@ -7,7 +7,7 @@ This very first version of KwirthMetrics is compatible with Kwirth core server v
 
 | Plugin Kwirth version | Kwirth version |
 |-|-|
-|0.0.1|0.4.20|
+|0.12.5|0.4.20|
 
 
 
@@ -63,7 +63,7 @@ If everyting is correctly configured and tagged, the user should see a list of c
 
     ```bash
     # From your Backstage root directory
-    yarn --cwd packages/app add @jfvilas/plugin-kwirth-metrics @jfvilas/plugin-kwirth-common
+    yarn --cwd packages/app add @jfvilas/plugin-kwirth-metrics @jfvilas/plugin-kwirth-common @jfvilas/kwirth-common
     ```
 
 3. Make sure the [Kwirth backend plugin](https://www.npmjs.com/package/@jfvilas/plugin-kwirth-backend#configure) is installed and configured.
@@ -77,7 +77,7 @@ If everyting is correctly configured and tagged, the user should see a list of c
     Firstly, import the plugin module.
     ```typescript
     // In packages/app/src/components/catalog/EntityPage.tsx
-    import { EntityKwirthMetricsContent, isKwirthAvailable } from '@jfvilas/plugin-kwirth-common';
+    import { EntityKwirthMetricsContent, isKwirthAvailable } from '@jfvilas/plugin-kwirth-metrics';
     ```
 
     Then, add a tab to your EntityPage (the 'if' is optional, you can keep the 'KwirthMetrics' tab always visible if you prefer to do it that way).
@@ -87,7 +87,7 @@ If everyting is correctly configured and tagged, the user should see a list of c
       <EntityLayout>
         {/* other tabs... */}
         <EntityLayout.Route if={isKwirthAvailable} path="/kwirthmetrics" title="KwirthMetrics">
-          <EntityKwirthMetricsContent />
+          <EntityKwirthMetricsContent allMetrics={true} enableRestart={false} />
         </EntityLayout.Route>
       </EntityLayout>
     )
