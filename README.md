@@ -141,7 +141,7 @@ When you access the tab, if you have not yet tagged your entities you would see 
 
 Once you tag your entities and your Kubernetes objects, you should see something similar to this:
 
-![kwirthmetrics-available](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/blob/master/images/kwirthmetrics-available.png)
+![kwirthmetrics-available](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-available.png)
 
 KwirthMetrics is ready to show your favourite charts!!
 
