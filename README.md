@@ -163,13 +163,13 @@ The icons will light up in its corresponding color when a new event takes place.
 
 This is how it feels:
 
-![status info](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/status-info.png)
+![status info](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-status.png)
 
 
 ## Restarting pods
 If your Backstage administrator has configured **Restarting** permissions and you are permitted, you would see a "Restart Pod" button just on the left of the "Play" button.
 
-![status info](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/restart-pod.png)
+![restart-pod](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-restart-pod.png)
 
 When you are not allowed to restart a pod, you can see the icon but you cannot click it. Conversely, if you are allowed, you can click the button and the pod (in the *namespace you have selected*) will be restarted.
 
