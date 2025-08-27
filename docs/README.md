@@ -1,19 +1,21 @@
 # KwirthMetrics Plugin
-This package is a Backstage plugin for **showing real-time streamed Kubernetes objects' metrics** and perform **somae basic pod operations** via [Kwirth](https://jfvilas.github.io/kwirth).
+This package is a Backstage plugin for **showing real-time streamed Kubernetes objects' metrics** and perform **some basic pod operations** via [Kwirth](https://jfvilas.github.io/kwirth).
 
 
 ## Version compatibility
-This very first version of KwirthMetrics is compatible with Kwirth core server version **0.3.484**. Following table shows version compatibility between this plugin KwirthMetrics and Kwirth Core.
+This very first version of KwirthMetrics is compatible with Kwirth core server versions according to following table.
 
 | Plugin Kwirth version | Kwirth version |
 |-|-|
-|0.0.1|0.3.484|
+|0.12.5|0.4.20|
+
+
 
 ## What for?
-This Backstage plugin allows you viewing Kubernetes metrics in real time that are linked to your Backstage entities. It's very important to understand that for this plugin to work you need to install Kwirth on your Kubernetes cluster (aside from Kwirth Backstage backend plugin), that is, this plugin is just another front end for [Kwirth](https://jfvilas.github.io/kwirth).
+This Backstage plugin allows you viewing **Kubernetes metrics** in real time that are linked to your Backstage entities. It's very important to understand that for this plugin to work you need to install Kwirth on your Kubernetes cluster (aside from Kwirth Backstage backend plugin), that is, this plugin is just another frontend for [Kwirth](https://jfvilas.github.io/kwirth).
 
-In this very first versoin of KwirthMetrics you will be able to perform this actions:
-  - Show real-time metrics of a source container (you can select which container to view)
+In this very first versoin of KwirthMetrics you will be able to perform at least this actions:
+  - Show real-time metrics of a source container (you can select which containers to view)
   - Show real-time metrics of a source pod (including all its containers)
   - Show real-time metrics of a set of pods (you can select what pods to chart)
   - Restarting a kubernetes object (pod, set of pods or just a simple container). This capability is not designed to substitute your operation tools, it is just a way for your developers, for example, to self-solve restarting-pod needs without the complexity of giving them access to Lens, K9s, Headlamp or kubectl.
@@ -23,18 +25,19 @@ Kwirth is a really-easy-to-use data-exporting platform for Kubernetes that runs 
 In addition, you can access [Kwirth project here](https://github.com/jfvilas/kwirth).
 
 ## What is this plugin for?
-This Backstage plugin adds Backstage a feature for showing **real-time** charts of metrics from your Kubernetes objects.You can show this charts directly inside your Backstage frontend application. The plugin will be enabled for any entity that is correctly tagged (according to Backstage Kubernetes core feature) and its correpsonding Kubernetes resources are found on any of the clusters that have been added to Backstage.
+This Backstage plugin adds Backstage a feature for showing **real-time charts showing of metrics** about your Kubernetes objects and its **resource consumption**.You can show this charts *directly inside your Backstage frontend* application. The plugin will be enabled for any entity that is correctly tagged (according to Backstage Kubernetes core feature) and its correpsonding Kubernetes resources are found on any of the clusters that have been added to Backstage.
 
 In addition, Backstage users can **restart pods** if they are allowed to (according to KwirthMetrics and KwirthOps permissions).
 
 When KwirthMetrics is correctly installed and configured, it is possible to stream and chart real-time Kubernetes metrics to your Backstage like in this sample we show here:
 
-+++![kwirthmetrics-running](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-running.png)
+![kwirthmetrics-running](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-running.png)
 
-This frontend plugin includes just the visualization of metrics charts. All needed configuration, and specially all **permission settings** are done in the backend plugin and the app-config YAML. You can restrict access to pods, namespaces, clusters, etc. by configuring permissions to be applied by the backend plugin.
+This frontend plugin **includes just the visualization of metrics** charts. All needed configuration, and specially all **permission settings** are done in the backend plugin and the app-config YAML. You can restrict access to pods, namespaces, clusters, etc. by configuring permissions to be applied by the backend plugin.
 
 The ability to restart pods is also configured in the app-config (YAML, env or whatever), and **restartig permissions are set independently than chart streaming permissions**.
-The backend plugin is the only responsible for configuration and permissionism, all the capabilities related with chart showing are implemented in the frontend plugin, who establishes the connections to the corresponding Kwirth instances (running inside your Kubernetes clusters).
+The backend plugin is the only responsible for configuration and permissionism, all the capabilities related with showing charts are implemented in the frontend plugin, which is in charge of establishing the connections to the corresponding Kwirth instances (running inside your Kubernetes clusters).
+
 
 ## How does it work?
 Let's explain this by following a user working sequence:
@@ -50,7 +53,8 @@ Let's explain this by following a user working sequence:
 
 If everyting is correctly configured and tagged, the user should see a list of clusters similar to the one we show bellow. When selecting a cluster, the user should see a list of namespaces where the entity is running and is elligible for showing metrics charts.
 
-+++ image cluster list
+![kwirthmetrics-clusterslist](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-clusterslist.png)
+
 
 ## Installation
 1. Install corresponding Backstage backend plugin [more information here](https://www.npmjs.com/package/@jfvilas/plugin-kwirth-backend). The backend plugin of Kwirth is **shared with all front end plugins**, so you only need to install backend plugin once.
@@ -59,7 +63,7 @@ If everyting is correctly configured and tagged, the user should see a list of c
 
     ```bash
     # From your Backstage root directory
-    yarn --cwd packages/app add @jfvilas/plugin-kwirth-metrics @jfvilas/plugin-kwirth-common
+    yarn --cwd packages/app add @jfvilas/plugin-kwirth-metrics @jfvilas/plugin-kwirth-common @jfvilas/kwirth-common
     ```
 
 3. Make sure the [Kwirth backend plugin](https://www.npmjs.com/package/@jfvilas/plugin-kwirth-backend#configure) is installed and configured.
@@ -73,7 +77,7 @@ If everyting is correctly configured and tagged, the user should see a list of c
     Firstly, import the plugin module.
     ```typescript
     // In packages/app/src/components/catalog/EntityPage.tsx
-    import { EntityKwirthMetricsContent, isKwirthAvailable } from '@jfvilas/plugin-kwirth-common';
+    import { EntityKwirthMetricsContent, isKwirthAvailable } from '@jfvilas/plugin-kwirth-metrics';
     ```
 
     Then, add a tab to your EntityPage (the 'if' is optional, you can keep the 'KwirthMetrics' tab always visible if you prefer to do it that way).
@@ -83,7 +87,7 @@ If everyting is correctly configured and tagged, the user should see a list of c
       <EntityLayout>
         {/* other tabs... */}
         <EntityLayout.Route if={isKwirthAvailable} path="/kwirthmetrics" title="KwirthMetrics">
-          <EntityKwirthMetricsContent />
+          <EntityKwirthMetricsContent allMetrics={true} enableRestart={false} />
         </EntityLayout.Route>
       </EntityLayout>
     )
@@ -137,7 +141,7 @@ When you access the tab, if you have not yet tagged your entities you would see 
 
 Once you tag your entities and your Kubernetes objects, you should see something similar to this:
 
-![kwirthmetrics-available](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/blob/master/images/kwirthmetrics-available.png)
+![kwirthmetrics-available](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-available.png)
 
 KwirthMetrics is ready to show your favourite charts!!
 
@@ -159,13 +163,13 @@ The icons will light up in its corresponding color when a new event takes place.
 
 This is how it feels:
 
-![status info](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/status-info.png)
+![status info](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-status.png)
 
 
 ## Restarting pods
 If your Backstage administrator has configured **Restarting** permissions and you are permitted, you would see a "Restart Pod" button just on the left of the "Play" button.
 
-![status info](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/restart-pod.png)
+![restart-pod](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-restart-pod.png)
 
 When you are not allowed to restart a pod, you can see the icon but you cannot click it. Conversely, if you are allowed, you can click the button and the pod (in the *namespace you have selected*) will be restarted.
 
@@ -243,7 +247,7 @@ Set the number of charts you want to be shown on each line. If you have selected
 Number of seconds between samples. Take into account that this interval is not the real cluster metrics smple rate, which must be set inside Kwirth core for each cluster.
 
 ### Depth
-Number of values to hold
+Number of values to hold on screen.
 
 ### Chart
 Select the cart type to use:
@@ -259,7 +263,7 @@ When you select more than one asset, **and the chart type is set to Bar or Area*
   - **Merge**, values of differnte sources (same metric but different source object) will be shonw in the same chart.
   - **Stack**, if you've selected 'merge', you can decide to show stacked original values, or just show a sum of all the values on each sample.
 
-Check the examples below to understand how each one of these will behave:
+Please check the examples below to understand how each one of these will behave:
 
 **Aggregate**
 ![kwirthmetrics-aggregate](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-aggregate.png)
@@ -269,32 +273,3 @@ Check the examples below to understand how each one of these will behave:
 
 **Merge and Stack**
 ![kwirthmetrics-merge-stack](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-merge-stack.png)
-
-
-## Metrics options
-In addition to chart options, you can also decide what matrics you want to offer to your users. By default, Kwirth allows users to use this metrics on charts:
-  - kwirth_container_memory_percentage, % of used memory in relation with whole cluster
-  - kwirth_container_cpu_percentage, % of used CPU in relation with whole cluster
-  - kwirth_container_transmit_percentage, % of bytes sent in relation with the whole cluster
-  - kwirth_container_receive_percentage, % of bytes received in relation with the whole cluster
-  - kwirth_container_transmit_mbps, Mbps sent by selected object/s
-  - kwirth_container_receive_mbps, Mbps received by selected object/s
-
-It is very important to understand that these metrics are computed according to selected object. I mean, if you select several pods, the % of CPU, for example, is calculated as the % of CPU tat all selected pods represent in relation with the whole cluster. And the same can be applied to memory, transmit percentage and receive percentage.
-
-If you want to offer your Backstage users a more granular metrics selection you can enable the 'allMetrics' property so Kwirth will offer the user the abiity to choose between a longer range of metrics, the ones offered by your kubelet cluster. For achieving this, you only need to add the property as shown below.
-
-```jsx
-// Note: Add to any other Pages as well (e.g. defaultEntityPage or webSiteEntityPage, for example)
-const serviceEntityPage = (
-  <EntityLayout>
-
-    {/* other tabs... */}
-    <EntityLayout.Route if={isKwirthAvailable} path="/kwirthmetrics" title="KwirthMetrics">
-      <EntityKwirthMetricsContent enableRestart={false} allMetrics={true}/>
-    </EntityLayout.Route>
-  </EntityLayout>
-)
-```
-
-+++ metrics list

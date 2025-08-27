@@ -18,7 +18,7 @@ import useAsync from 'react-use/esm/useAsync'
 
 import { Progress, WarningPanel } from '@backstage/core-components'
 import { alertApiRef, useApi } from '@backstage/core-plugin-api'
-import { ANNOTATION_KWIRTH_LOCATION, isKwirthAvailable, ClusterValidPods, PodData, IStatusLine, MetricDefinition } from '@jfvilas/plugin-kwirth-common'
+import { isKwirthAvailable, ClusterValidPods, PodData, IStatusLine, MetricDefinition, ANNOTATION_BACKSTAGE_KUBERNETES_LABELID, ANNOTATION_BACKSTAGE_KUBERNETES_LABELSELECTOR } from '@jfvilas/plugin-kwirth-common'
 import { MissingAnnotationEmptyState, useEntity } from '@backstage/plugin-catalog-react'
 
 // kwirthMetrics
@@ -694,7 +694,7 @@ export const EntityKwirthMetricsContent = (props:{
         )}
 
         {!isKwirthAvailable(entity) && !loading && (
-            <MissingAnnotationEmptyState readMoreUrl='https://github.com/jfvilas/kwirth' annotation={ANNOTATION_KWIRTH_LOCATION}/>
+            <MissingAnnotationEmptyState readMoreUrl='https://github.com/jfvilas/kwirth' annotation={[ANNOTATION_BACKSTAGE_KUBERNETES_LABELID, ANNOTATION_BACKSTAGE_KUBERNETES_LABELSELECTOR]}/>
         )}
 
         { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length===0 &&

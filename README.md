@@ -271,5 +271,5 @@ Please check the examples below to understand how each one of these will behave:
 **Merge**
 ![kwirthmetrics-merge](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-merge.png)
 
-**MErge and Stack**
+**Merge and Stack**
 ![kwirthmetrics-merge-stack](https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/images/kwirthmetrics-merge-stack.png)
