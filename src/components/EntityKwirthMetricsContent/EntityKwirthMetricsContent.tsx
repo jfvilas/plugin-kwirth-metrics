@@ -400,10 +400,14 @@ export const EntityKwirthMetricsContent = (props:{
             setStatusLevel(level)
         }
 
+        const prepareText = (txt:string|undefined) => {
+            return txt? (txt.length>25? txt.substring(0,25)+"...":txt) : 'N/A'
+        }
+
         return (
             <Grid container direction='row'>
                 <Grid item>
-                    <Typography variant='h5'>{title}</Typography>
+                    <Typography variant='h5'>{prepareText(title)}</Typography>
                 </Grid>
                 <Grid item style={{marginTop:'-8px'}}>
                     <IconButton title="info" disabled={!statusMessages.some(m=>m.type=== InstanceMessageTypeEnum.SIGNAL && m.level=== SignalMessageLevelEnum.INFO)} onClick={() => show(SignalMessageLevelEnum.INFO)}>
@@ -707,7 +711,7 @@ export const EntityKwirthMetricsContent = (props:{
 
         { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length>0 && clusterValidPods.reduce((sum,cluster) => sum+cluster.data.length, 0)>0 &&
             <Box sx={{ display: 'flex'}}>
-                <Box sx={{ width: '200px'}}>
+                <Box sx={{ width: '200px', maxWidth:'200px'}}>
                     <Grid container direction='column'>
                         <Grid item>
                             <Card>
@@ -720,9 +724,9 @@ export const EntityKwirthMetricsContent = (props:{
                             </Card>
                         </Grid>
                     </Grid>
-
                 </Box>
-                <Box sx={{ flexGrow: 1, p:1 }}>
+
+                <Box sx={{ flexGrow: 1, p:1, marginLeft:'8px' }}>
 
                     { !selectedClusterName && 
                         <img src={KwirthMetricsLogo} alt="No cluster selected" style={{ left:'40%', marginTop:'10%', width:'20%', position:'relative' }} />
