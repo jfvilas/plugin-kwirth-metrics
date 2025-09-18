@@ -1,10 +1,10 @@
 ---
-title: Kwirth Metrics for Backstage
+title: KwirthMetrics for Backstage
 author: Julio Fernandez
 authorUrl: https://github.com/jfvilas
-category: Observability
-description: Kwirth Metrics for Backstage provides live-streaming Kubernetes metrics.
-documentation: https://github.com/jfvilas/kwirthbackstage-metrics
-iconUrl: https://raw.githubusercontent.com/jfvilas/kwirthbackstage-metrics/refs/heads/master/src/assets/kwirthmetrics-logo.png
-npmPackageName: '@jfvilas/plugin-kwirthbackstage-metrics'
-addedDate: 2025-04-14
+category: Monitoring
+description: Shows live-streaming charts of Kubernetes resources metrics like CPU, memory, I/O... (you can group and merge data).
+documentation: https://github.com/jfvilas/plugin-kwirth-metrics
+iconUrl: https://raw.githubusercontent.com/jfvilas/plugin-kwirth-metrics/master/src/assets/kwirthmetrics-logo.png
+npmPackageName: '@jfvilas/plugin-kwirth-metrics'
+addedDate: '2025-09-14'
