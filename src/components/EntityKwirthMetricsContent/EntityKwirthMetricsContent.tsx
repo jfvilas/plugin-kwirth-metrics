@@ -51,6 +51,7 @@ import RefreshIcon from '@material-ui/icons/Refresh'
 import KwirthMetricsLogo from '../../assets/kwirthmetrics-logo.svg'
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { KwirthNews } from '../KwirthNews/KwirthNews'
 
 export const EntityKwirthMetricsContent = (props:{
         allMetrics: boolean
@@ -77,6 +78,7 @@ export const EntityKwirthMetricsContent = (props:{
     const [showStatusDialog, setShowStatusDialog] = useState(false)
     const [statusLevel, setStatusLevel] = useState<SignalMessageLevelEnum>(SignalMessageLevelEnum.INFO)
     const [backendVersion, setBackendVersion ] = useState<string>('')
+    const [ backendInfo, setBackendInfo ] = useState<any>(undefined)
     const [_refresh,setRefresh] = useState(0)
     const [allMetrics, setAllMetrics] = useState<MetricDefinition[]>(
     [
@@ -89,6 +91,7 @@ export const EntityKwirthMetricsContent = (props:{
     ])
     const { loading, error } = useAsync ( async () => {
         if (backendVersion==='') setBackendVersion(await kwirthMetricsApi.getVersion())
+        if (!backendInfo) setBackendInfo(await kwirthMetricsApi.getInfo())
         let reqScopes = [InstanceConfigScopeEnum.STREAM]
         if (props.enableRestart) reqScopes.push(InstanceConfigScopeEnum.RESTART)
         let data = await kwirthMetricsApi.requestAccess(entity,'metrics', reqScopes)
@@ -721,6 +724,11 @@ export const EntityKwirthMetricsContent = (props:{
                         <Grid item>
                             <Card>
                                 <Options options={kwirthMetricsOptionsRef.current!} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} onChange={onChangeOptions} disabled={selectedNamespaces.length === 0 || paused.current}/>
+                            </Card>
+                        </Grid>
+                        <Grid item>
+                            <Card>
+                                <KwirthNews latestVersions={backendInfo} backendVersion={backendVersion}/>
                             </Card>
                         </Grid>
                     </Grid>

@@ -22,6 +22,7 @@ export interface KwirthMetricsApi {
     requestAccess(entity:Entity, channel:string, scopes:InstanceConfigScopeEnum[]): Promise<ClusterValidPods[]>
     getResources(entity:Entity): Promise<ClusterValidPods>
     getVersion(): Promise<string>
+    getInfo(): any
 }
 
 export const kwirthMetricsApiRef = createApiRef<KwirthMetricsApi>({
