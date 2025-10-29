@@ -5,25 +5,7 @@ import Grid from '@material-ui/core/Grid'
 import MenuItem from '@material-ui/core/MenuItem'
 import Select from '@material-ui/core/Select'
 import { Checkbox, FormControlLabel, Typography } from '@material-ui/core'
-
-interface MetricsOptions {
-    width: number
-    depth: number
-    interval: number
-    chart: string
-    aggregate: boolean
-    merge: boolean
-    stack: boolean
-}
-
-interface IOptions {
-    onChange: (options:MetricsOptions) => void
-    options: MetricsOptions
-    disabled: boolean
-    selectedNamespaces?:string[]
-    selectedPodNames?:string[]
-    selectedContainerNames?:string[]
-}
+import { IMetricsOptions, IOptions } from './IOptions'
 
 /**
  * 
@@ -32,7 +14,7 @@ interface IOptions {
  * @returns onChange is fired sending back the new options JSON
  */
 const Options = (props: IOptions) => {
-    const [options, setOptions] = useState<any>(props.options)
+    const [options, setOptions] = useState<IMetricsOptions>(props.metricsOptions)
 
     const handleChange = (change:any) => {
         var a = {...options,...change}
@@ -112,5 +94,4 @@ const Options = (props: IOptions) => {
     </>)
 }
 
-export type { MetricsOptions }
 export { Options }

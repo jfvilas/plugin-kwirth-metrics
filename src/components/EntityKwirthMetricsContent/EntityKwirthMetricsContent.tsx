@@ -23,11 +23,10 @@ import { MissingAnnotationEmptyState, useEntity } from '@backstage/plugin-catalo
 
 // kwirthMetrics
 import { kwirthMetricsApiRef } from '../../api'
-import { accessKeySerialize, MetricsConfigModeEnum, MetricsMessage, InstanceMessageActionEnum, InstanceMessageFlowEnum, InstanceConfigScopeEnum, InstanceConfigViewEnum, InstanceMessage, InstanceMessageTypeEnum, SignalMessage, SignalMessageLevelEnum, InstanceConfigObjectEnum, InstanceConfig, InstanceMessageChannelEnum, OpsCommandEnum, IOpsMessageResponse, IOpsMessage, IRouteMessage } from '@jfvilas/kwirth-common'
+import { accessKeySerialize, MetricsConfigModeEnum, MetricsMessage, InstanceMessageActionEnum, InstanceMessageFlowEnum, InstanceConfigScopeEnum, InstanceConfigViewEnum, IInstanceMessage, InstanceMessageTypeEnum, ISignalMessage, SignalMessageLevelEnum, InstanceConfigObjectEnum, InstanceConfig, InstanceMessageChannelEnum, OpsCommandEnum, IOpsMessageResponse, IOpsMessage, IRouteMessage } from '@jfvilas/kwirth-common'
 
 // kwirthMetrics components
 import { ComponentNotFound, ErrorType } from '../ComponentNotFound'
-import { Options, MetricsOptions } from '../Options'
 import { ClusterList } from '../ClusterList'
 import { ObjectSelector } from '../ObjectSelector'
 import { ShowError } from '../ShowError'
@@ -52,6 +51,8 @@ import KwirthMetricsLogo from '../../assets/kwirthmetrics-logo.svg'
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { KwirthNews } from '../KwirthNews/KwirthNews'
+import { IMetricsOptions } from '../Options/IOptions'
+import { Options } from '../Options'
 
 export const EntityKwirthMetricsContent = (props:{
         allMetrics: boolean
@@ -74,7 +75,7 @@ export const EntityKwirthMetricsContent = (props:{
     const [statusMessages, setStatusMessages] = useState<IStatusLine[]>([])
     const [websocket, setWebsocket] = useState<WebSocket>()
     const [instance, setInstance] = useState<string>()
-    const kwirthMetricsOptionsRef = useRef<MetricsOptions>({depth:10, width:3, interval:10, chart:'area', aggregate:false, merge:false, stack:false })
+    const kwirthMetricsOptionsRef = useRef<IMetricsOptions>({depth:10, width:3, interval:10, chart:'area', aggregate:false, merge:false, stack:false })
     const [showStatusDialog, setShowStatusDialog] = useState(false)
     const [statusLevel, setStatusLevel] = useState<SignalMessageLevelEnum>(SignalMessageLevelEnum.INFO)
     const [backendVersion, setBackendVersion ] = useState<string>('')
@@ -90,14 +91,20 @@ export const EntityKwirthMetricsContent = (props:{
         {metric:'kwirth_container_receive_mbps',help:'',eval:'',type:'counter'}
     ])
     const { loading, error } = useAsync ( async () => {
+        console.log('asynceffect1')
         if (backendVersion==='') setBackendVersion(await kwirthMetricsApi.getVersion())
+        console.log('asynceffect2')
         if (!backendInfo) setBackendInfo(await kwirthMetricsApi.getInfo())
+        console.log('asynceffect3')
+
         let reqScopes = [InstanceConfigScopeEnum.STREAM]
         if (props.enableRestart) reqScopes.push(InstanceConfigScopeEnum.RESTART)
+        console.log('reqesting access')
         let data = await kwirthMetricsApi.requestAccess(entity,'metrics', reqScopes)
+        console.log('got data', data)
         setClusterValidPods(data)
     })
-
+    console.log('adadas')
     const colours = [
         "#6e5bb8", // morado oscuro
         "#4a9076", // verde oscuro
@@ -177,7 +184,7 @@ export const EntityKwirthMetricsContent = (props:{
     }
 
     const processMetricsMessage = (wsEvent:any) => {
-        let instanceMessage = JSON.parse(wsEvent.data) as InstanceMessage
+        let instanceMessage = JSON.parse(wsEvent.data) as IInstanceMessage
         switch (instanceMessage.type) {
             case InstanceMessageTypeEnum.DATA:
                 let metricsMessage = instanceMessage as MetricsMessage
@@ -202,26 +209,30 @@ export const EntityKwirthMetricsContent = (props:{
                     if (instanceMessage.instance!=='')
                         setInstance(instanceMessage.instance)
                     else {
-                        let signalMessage = instanceMessage as SignalMessage
-                        alertApi.post({ message: signalMessage.text, severity:'error', display:'transient' })
+                        let signalMessage = instanceMessage as ISignalMessage
+                        if (signalMessage.text) {
+                            alertApi.post({ message: signalMessage.text, severity:'error', display:'transient' })
+                        }
                     }
                 }
                 else {
-                    let signalMessage = instanceMessage as SignalMessage
-                    addMessage(signalMessage.level, signalMessage.text)
-                    switch(signalMessage.level) {
-                        case SignalMessageLevelEnum.INFO:
-                            alertApi.post({ message: signalMessage.text, severity:'info', display:'transient' })
-                            break
-                        case SignalMessageLevelEnum.WARNING:
-                            alertApi.post({ message: signalMessage.text, severity:'warning', display:'transient' })
-                            break
-                        case SignalMessageLevelEnum.ERROR:
-                            alertApi.post({ message: signalMessage.text, severity:'error', display:'transient' })
-                            break
-                        default:
-                            alertApi.post({ message: signalMessage.text, severity:'success', display:'transient' })
-                            break
+                    let signalMessage = instanceMessage as ISignalMessage
+                    if (signalMessage.text) {
+                        addMessage(signalMessage.level, signalMessage.text)
+                        switch(signalMessage.level) {
+                            case SignalMessageLevelEnum.INFO:
+                                alertApi.post({ message: signalMessage.text, severity:'info', display:'transient' })
+                                break
+                            case SignalMessageLevelEnum.WARNING:
+                                alertApi.post({ message: signalMessage.text, severity:'warning', display:'transient' })
+                                break
+                            case SignalMessageLevelEnum.ERROR:
+                                alertApi.post({ message: signalMessage.text, severity:'error', display:'transient' })
+                                break
+                            default:
+                                alertApi.post({ message: signalMessage.text, severity:'success', display:'transient' })
+                                break
+                        }
                     }
                 }
                 break
@@ -233,9 +244,9 @@ export const EntityKwirthMetricsContent = (props:{
     }
     
     const websocketOnChunk = (wsEvent:any) => {
-        let instanceMessage:InstanceMessage
+        let instanceMessage:IInstanceMessage
         try {
-            instanceMessage = JSON.parse(wsEvent.data) as InstanceMessage
+            instanceMessage = JSON.parse(wsEvent.data) as IInstanceMessage
         }
         catch (err) {
             console.log(err)
@@ -344,7 +355,7 @@ export const EntityKwirthMetricsContent = (props:{
         websocket?.close()
     }
 
-    const onChangeOptions = (options:MetricsOptions) => {
+    const onChangeOptions = (options:IMetricsOptions) => {
         kwirthMetricsOptionsRef.current=options
         setRefresh(Math.random())
     }
@@ -452,7 +463,7 @@ export const EntityKwirthMetricsContent = (props:{
         return resultSeries
     }
 
-    const addChart = (options: MetricsOptions, metric:string, names:string[], series:any[], colour:string) => {
+    const addChart = (options: IMetricsOptions, metric:string, names:string[], series:any[], colour:string) => {
         var result = <></>
         var mergedSeries = mergeSeries(names, series)
 
@@ -553,7 +564,7 @@ export const EntityKwirthMetricsContent = (props:{
         )
     }
 
-    const showMetrics = (options: MetricsOptions) => {
+    const showMetrics = (options: IMetricsOptions) => {
         if (!metricsMessages || metricsMessages.length === 0) {
             if (selectedNamespaces.length === 0) 
                 return <Typography>Select namespace chip on top.</Typography>
@@ -691,6 +702,12 @@ export const EntityKwirthMetricsContent = (props:{
         }
     }
 
+    console.log(isKwirthAvailable(entity))
+    console.log(!loading)
+    console.log(clusterValidPods)
+    console.log(clusterValidPods.length>0)
+    console.log(clusterValidPods.reduce((sum,cluster) => sum+cluster.data.length, 0)===0)
+
     return (<>
         { showError!=='' && <ShowError message={showError} onClose={() => setShowError('')}/> }
 
@@ -723,7 +740,7 @@ export const EntityKwirthMetricsContent = (props:{
                         </Grid>
                         <Grid item>
                             <Card>
-                                <Options options={kwirthMetricsOptionsRef.current!} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} onChange={onChangeOptions} disabled={selectedNamespaces.length === 0 || paused.current}/>
+                                <Options metricsOptions={kwirthMetricsOptionsRef.current!} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} onChange={onChangeOptions} disabled={selectedNamespaces.length === 0 || paused.current}/>
                             </Card>
                         </Grid>
                         <Grid item>
