@@ -16,13 +16,13 @@ limitations under the License.
 import { Entity } from '@backstage/catalog-model'
 import { createApiRef } from '@backstage/core-plugin-api'
 import { InstanceConfigScopeEnum } from '@jfvilas/kwirth-common'
-import { ClusterValidPods } from '@jfvilas/plugin-kwirth-common'
+import { ClusterValidPods, IBackendInfo } from '@jfvilas/plugin-kwirth-common'
 
 export interface KwirthMetricsApi {
     requestAccess(entity:Entity, channel:string, scopes:InstanceConfigScopeEnum[]): Promise<ClusterValidPods[]>
     getResources(entity:Entity): Promise<ClusterValidPods>
     getVersion(): Promise<string>
-    getInfo(): any
+    getInfo(): Promise<IBackendInfo>
 }
 
 export const kwirthMetricsApiRef = createApiRef<KwirthMetricsApi>({

@@ -1,1 +1,0 @@
-export { EntityKwirthMetricsContent } from './EntityKwirthMetricsContent';

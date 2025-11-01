@@ -102,7 +102,7 @@ If everyting is correctly configured and tagged, the user should see a list of c
 
     ```yaml
     metadata:
-      annotaations:
+      annotations:
         backstage.io/kubernetes-id: entity001
     ```
 
@@ -110,7 +110,7 @@ If everyting is correctly configured and tagged, the user should see a list of c
 
     ```yaml
     metadata:
-      annotaations:
+      annotations:
         backstage.io/kubernetes-id: 'app=core,artifact=backend'
     ```
 

@@ -7,12 +7,6 @@ import Select from '@material-ui/core/Select'
 import { Checkbox, FormControlLabel, Typography } from '@material-ui/core'
 import { IMetricsOptions, IOptions } from './IOptions'
 
-/**
- * 
- * @param options A JSON with the curren toptions
- * @param disabled if true the options will be shown disabled
- * @returns onChange is fired sending back the new options JSON
- */
 const Options = (props: IOptions) => {
     const [options, setOptions] = useState<IMetricsOptions>(props.metricsOptions)
 

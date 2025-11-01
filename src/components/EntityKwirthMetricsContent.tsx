@@ -18,19 +18,13 @@ import useAsync from 'react-use/esm/useAsync'
 
 import { Progress, WarningPanel } from '@backstage/core-components'
 import { alertApiRef, useApi } from '@backstage/core-plugin-api'
-import { isKwirthAvailable, ClusterValidPods, PodData, IStatusLine, MetricDefinition, ANNOTATION_BACKSTAGE_KUBERNETES_LABELID, ANNOTATION_BACKSTAGE_KUBERNETES_LABELSELECTOR } from '@jfvilas/plugin-kwirth-common'
+import { isKwirthAvailable, ClusterValidPods, PodData, IStatusLine, MetricDefinition, ANNOTATION_BACKSTAGE_KUBERNETES_LABELID, ANNOTATION_BACKSTAGE_KUBERNETES_LABELSELECTOR, IBackendInfo } from '@jfvilas/plugin-kwirth-common'
 import { MissingAnnotationEmptyState, useEntity } from '@backstage/plugin-catalog-react'
 
 // kwirthMetrics
-import { kwirthMetricsApiRef } from '../../api'
+import { kwirthMetricsApiRef } from '../api'
 import { accessKeySerialize, MetricsConfigModeEnum, MetricsMessage, InstanceMessageActionEnum, InstanceMessageFlowEnum, InstanceConfigScopeEnum, InstanceConfigViewEnum, IInstanceMessage, InstanceMessageTypeEnum, ISignalMessage, SignalMessageLevelEnum, InstanceConfigObjectEnum, InstanceConfig, InstanceMessageChannelEnum, OpsCommandEnum, IOpsMessageResponse, IOpsMessage, IRouteMessage } from '@jfvilas/kwirth-common'
-
-// kwirthMetrics components
-import { ComponentNotFound, ErrorType } from '../ComponentNotFound'
-import { ClusterList } from '../ClusterList'
-import { ObjectSelector } from '../ObjectSelector'
-import { ShowError } from '../ShowError'
-import { StatusLog } from '../StatusLog'
+import { ClusterList, ObjectSelector, ShowError, StatusLog, KwirthNews, ComponentNotFound, ErrorType } from '@jfvilas/plugin-kwirth-frontend'
 
 // Material-UI
 import { Box, Checkbox, FormControl, Grid, MenuItem, Select } from '@material-ui/core'
@@ -47,12 +41,11 @@ import InfoIcon from '@material-ui/icons/Info'
 import WarningIcon from '@material-ui/icons/Warning'
 import ErrorIcon from '@material-ui/icons/Error'
 import RefreshIcon from '@material-ui/icons/Refresh'
-import KwirthMetricsLogo from '../../assets/kwirthmetrics-logo.svg'
+import KwirthMetricsLogo from '../assets/kwirthmetrics-logo.svg'
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { KwirthNews } from '../KwirthNews/KwirthNews'
-import { IMetricsOptions } from '../Options/IOptions'
-import { Options } from '../Options'
+import { IMetricsOptions } from './IOptions'
+import { Options } from './Options'
 
 export const EntityKwirthMetricsContent = (props:{
         allMetrics: boolean
@@ -79,7 +72,7 @@ export const EntityKwirthMetricsContent = (props:{
     const [showStatusDialog, setShowStatusDialog] = useState(false)
     const [statusLevel, setStatusLevel] = useState<SignalMessageLevelEnum>(SignalMessageLevelEnum.INFO)
     const [backendVersion, setBackendVersion ] = useState<string>('')
-    const [ backendInfo, setBackendInfo ] = useState<any>(undefined)
+    const [ backendInfo, setBackendInfo ] = useState<IBackendInfo>()
     const [_refresh,setRefresh] = useState(0)
     const [allMetrics, setAllMetrics] = useState<MetricDefinition[]>(
     [
@@ -91,20 +84,14 @@ export const EntityKwirthMetricsContent = (props:{
         {metric:'kwirth_container_receive_mbps',help:'',eval:'',type:'counter'}
     ])
     const { loading, error } = useAsync ( async () => {
-        console.log('asynceffect1')
         if (backendVersion==='') setBackendVersion(await kwirthMetricsApi.getVersion())
-        console.log('asynceffect2')
         if (!backendInfo) setBackendInfo(await kwirthMetricsApi.getInfo())
-        console.log('asynceffect3')
-
         let reqScopes = [InstanceConfigScopeEnum.STREAM]
         if (props.enableRestart) reqScopes.push(InstanceConfigScopeEnum.RESTART)
-        console.log('reqesting access')
         let data = await kwirthMetricsApi.requestAccess(entity,'metrics', reqScopes)
-        console.log('got data', data)
         setClusterValidPods(data)
     })
-    console.log('adadas')
+
     const colours = [
         "#6e5bb8", // morado oscuro
         "#4a9076", // verde oscuro
@@ -177,7 +164,7 @@ export const EntityKwirthMetricsContent = (props:{
             clickStop()
             let cluster = clusterValidPods.find(cluster => cluster.name === clusterName)
             if (cluster && cluster.metrics) {
-                cluster.metrics.sort( (a,b) => a.metric.startsWith('kwirth')? -1:1)
+                cluster.metrics.sort( (a,_b) => a.metric.startsWith('kwirth')? -1:1)
                 setAllMetrics(cluster.metrics)
             }
         }
@@ -278,7 +265,7 @@ export const EntityKwirthMetricsContent = (props:{
             addMessage(SignalMessageLevelEnum.ERROR, 'Cluster not found')
             return
         }
-        let pods = cluster.data.filter(p => selectedNamespaces.includes(p.namespace))
+        let pods = cluster.pods.filter(p => selectedNamespaces.includes(p.namespace))
         if (!pods || pods.length===0) {
             addMessage(SignalMessageLevelEnum.ERROR, 'Pod not found')
             return
@@ -390,24 +377,6 @@ export const EntityKwirthMetricsContent = (props:{
         setSelectedMetrics(event.target.value)
     }
 
-    const metricsSelector = () => {
-        let disabled = selectedClusterName === '' || selectedNamespaces.length === 0
-        return (
-            <FormControl style={{marginLeft:16, width:'300px'}} size='small'>
-                <Select value={selectedMetrics} MenuProps={{variant:'menu'}} multiple onChange={onMetricsChange} renderValue={(selected) => (selected as string[]).join(', ')} disabled={disabled || started}>
-                    {
-                        allMetrics.map(m => 
-                            <MenuItem key={m.metric} value={m.metric} style={{marginTop:'-6px', marginBottom:'-6px'}}>
-                                <Checkbox checked={selectedMetrics.includes(m.metric)} style={{marginTop:'-6px', marginBottom:'-6px'}}/>
-                                <Typography style={{marginTop:'-6px', marginBottom:'-6px'}}>{m.metric}</Typography>
-                            </MenuItem>
-                        )
-                    }
-                </Select>
-            </FormControl>
-        )
-    }
-
     const statusButtons = (title:string) => {
         const show = (level:SignalMessageLevelEnum) => {
             setShowStatusDialog(true)
@@ -433,9 +402,6 @@ export const EntityKwirthMetricsContent = (props:{
                     <IconButton title="error" disabled={!statusMessages.some(m=>m.type=== InstanceMessageTypeEnum.SIGNAL && m.level=== SignalMessageLevelEnum.ERROR)} onClick={() => show(SignalMessageLevelEnum.ERROR)} style={{marginLeft:'-16px'}}>
                         <ErrorIcon style={{ color:statusMessages.some(m=>m.type=== InstanceMessageTypeEnum.SIGNAL && m.level=== SignalMessageLevelEnum.ERROR)?'red':'#BDBDBD'}}/>
                     </IconButton>
-                </Grid>
-                <Grid item>
-                    {metricsSelector()}
                 </Grid>
             </Grid>
         )
@@ -478,7 +444,7 @@ export const EntityKwirthMetricsContent = (props:{
             case 'value':
                 height=40+series.length*80
                 result = (
-                    <Grid direction={'row'}>
+                    <Grid>
                         {
                             <Typography>
                                 { series.map( (serie,index) => {
@@ -555,7 +521,7 @@ export const EntityKwirthMetricsContent = (props:{
         }
 
         return (
-            <Grid direction='column' style={{width:'100%', marginBottom:8}}>
+            <Grid style={{width:'100%', marginBottom:8}}>
                 <Typography align='center'>{metric}</Typography>
                 <ResponsiveContainer height={height} key={metric+JSON.stringify(names)}>
                     {result}
@@ -670,7 +636,7 @@ export const EntityKwirthMetricsContent = (props:{
         }
 
 
-        let pods:PodData[] = (cluster.data as PodData[]).filter(pod => selectedNamespaces.includes(pod.namespace))
+        let pods:PodData[] = (cluster.pods as PodData[]).filter(pod => selectedNamespaces.includes(pod.namespace))
         for (let pod of pods) {
             let om:IOpsMessage = {
                 msgtype: 'opsmessage',
@@ -702,12 +668,6 @@ export const EntityKwirthMetricsContent = (props:{
         }
     }
 
-    console.log(isKwirthAvailable(entity))
-    console.log(!loading)
-    console.log(clusterValidPods)
-    console.log(clusterValidPods.length>0)
-    console.log(clusterValidPods.reduce((sum,cluster) => sum+cluster.data.length, 0)===0)
-
     return (<>
         { showError!=='' && <ShowError message={showError} onClose={() => setShowError('')}/> }
 
@@ -725,11 +685,11 @@ export const EntityKwirthMetricsContent = (props:{
             <ComponentNotFound error={ErrorType.NO_CLUSTERS} entity={entity}/>
         }
 
-        { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length>0 && clusterValidPods.reduce((sum,cluster) => sum+cluster.data.length, 0)===0 &&
+        { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length>0 && clusterValidPods.reduce((sum,cluster) => sum+cluster.pods.length, 0)===0 &&
             <ComponentNotFound error={ErrorType.NO_PODS} entity={entity}/>
         }
 
-        { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length>0 && clusterValidPods.reduce((sum,cluster) => sum+cluster.data.length, 0)>0 &&
+        { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length>0 && clusterValidPods.reduce((sum,cluster) => sum+cluster.pods.length, 0)>0 &&
             <Box sx={{ display: 'flex'}}>
                 <Box sx={{ width: '200px', maxWidth:'200px'}}>
                     <Grid container direction='column'>
@@ -759,15 +719,30 @@ export const EntityKwirthMetricsContent = (props:{
 
                     { selectedClusterName && <>
                         <Card style={{marginTop:-8}}>
-                            <CardHeader
-                                title={statusButtons(selectedClusterName)}
-                                style={{marginTop:-4, marginBottom:4, flexShrink:0}}
-                                action={actionButtons()}
-                            />
+                            <CardHeader title={statusButtons(selectedClusterName)} style={{marginTop:-4, marginBottom:4, flexShrink:0}} action={actionButtons()} />
                             
-                            <Typography style={{marginLeft:16, marginBottom:4}}>
-                                <ObjectSelector cluster={clusterValidPods.find(cluster => cluster.name === selectedClusterName)!} onSelect={onSelectObject} disabled={selectedClusterName === '' || started || paused.current} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} scope={InstanceConfigScopeEnum.STREAM}/>
-                            </Typography>
+                            <Grid container style={{alignItems:'end'}}>
+                                <Grid item style={{width:'66%'}}>
+                                    <Typography style={{marginLeft:14}}>
+                                        <ObjectSelector cluster={clusterValidPods.find(cluster => cluster.name === selectedClusterName)!} onSelect={onSelectObject} disabled={selectedClusterName === '' || started || paused.current} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} scope={InstanceConfigScopeEnum.STREAM}/>
+                                    </Typography>
+                                </Grid>
+                                <Grid item style={{width:'33%', marginLeft:0, marginBottom:6, maxWidth:'33%' }}>
+                                    <FormControl style={{width:'100%'}}>
+                                        <Select value={selectedMetrics} MenuProps={{variant:'menu'}} multiple onChange={onMetricsChange} renderValue={(selected) => (selected as string[]).join(', ').substring(0,40)+'...'} disabled={selectedClusterName === '' || selectedNamespaces.length === 0  || started}>
+                                            {
+                                                allMetrics.map(m => 
+                                                    <MenuItem key={m.metric} value={m.metric} style={{marginTop:'-8px', marginBottom:'-8px'}}>
+                                                        <Checkbox checked={selectedMetrics.includes(m.metric)} style={{marginTop:'-8px', marginBottom:'-8px'}}/>
+                                                        <Typography style={{marginTop:'-8px', marginBottom:'-8px'}}>{m.metric}</Typography>
+                                                    </MenuItem>
+                                                )
+                                            }
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                            </Grid>
+
                             <Divider/>
                             <CardContent style={{ overflow: 'auto' }}>
                                 { showMetrics(kwirthMetricsOptionsRef.current) }

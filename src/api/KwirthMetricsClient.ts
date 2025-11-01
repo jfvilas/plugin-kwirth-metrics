@@ -16,7 +16,7 @@ limitations under the License.
 import { DiscoveryApi, FetchApi } from '@backstage/core-plugin-api'
 import { KwirthMetricsApi } from './types'
 import { Entity } from '@backstage/catalog-model'
-import { ClusterValidPods, getInfo, getResources, getVersion, requestAccess } from '@jfvilas/plugin-kwirth-common'
+import { ClusterValidPods, getInfo, getResources, getVersion, IBackendInfo, requestAccess } from '@jfvilas/plugin-kwirth-common'
 import { InstanceConfigScopeEnum } from '@jfvilas/kwirth-common'
 
 export interface KwirthMetricsClientOptions {
@@ -34,7 +34,7 @@ export class KwirthMetricsClient implements KwirthMetricsApi {
         this.fetchApi = options.fetchApi
     }
 
-    async getInfo() : Promise<string> {
+    async getInfo() : Promise<IBackendInfo> {
         return getInfo(this.discoveryApi, this.fetchApi)
     }
 
