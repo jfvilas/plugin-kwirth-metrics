@@ -3,13 +3,13 @@ This package is a Backstage plugin for **showing real-time streamed Kubernetes o
 
 
 ## Version compatibility
-This very first version of KwirthMetrics is compatible with Kwirth core server versions according to following table.
+KwirthMetrics is compatible with Kwirth core server versions according to following table.
 
 | Plugin Kwirth version | Kwirth version |
 |-|-|
+|0.13.0|0.4.131|
 |0.12.8|0.4.45|
 |0.12.5|0.4.20|
-
 
 
 ## What for?
@@ -39,7 +39,6 @@ This frontend plugin **includes just the visualization of metrics** charts. All 
 The ability to restart pods is also configured in the app-config (YAML, env or whatever), and **restartig permissions are set independently than chart streaming permissions**.
 The backend plugin is the only responsible for configuration and permissionism, all the capabilities related with showing charts are implemented in the frontend plugin, which is in charge of establishing the connections to the corresponding Kwirth instances (running inside your Kubernetes clusters).
 
-
 ## How does it work?
 Let's explain this by following a user working sequence:
 
@@ -66,7 +65,7 @@ If everyting is correctly configured and tagged, the user should see a list of c
 
     ```bash
     # From your Backstage root directory
-    yarn --cwd packages/app add @jfvilas/plugin-kwirth-metrics @jfvilas/plugin-kwirth-common @jfvilas/kwirth-common
+    yarn --cwd packages/app add @jfvilas/plugin-kwirth-metrics @jfvilas/plugin-kwirth-common @jfvilas/plugin-kwirth-frontend @jfvilas/kwirth-common
     ```
 
 3. Make sure the [Kwirth backend plugin](https://www.npmjs.com/package/@jfvilas/plugin-kwirth-backend#configure) is installed and configured.
@@ -78,13 +77,14 @@ If everyting is correctly configured and tagged, the user should see a list of c
 1. Add the KwirthMetrics plugin as a tab in your Entity pages:
 
     Firstly, import the plugin module.
+
     ```typescript
     // In packages/app/src/components/catalog/EntityPage.tsx
     import { EntityKwirthMetricsContent, isKwirthAvailable } from '@jfvilas/plugin-kwirth-metrics';
     ```
 
     Then, add a tab to your EntityPage (the 'if' is optional, you can keep the 'KwirthMetrics' tab always visible if you prefer to do it that way).
-    ````jsx
+    ```jsx
     // Note: Add to any other Pages as well (e.g. defaultEntityPage or webSiteEntityPage, for example)
     const serviceEntityPage = (
       <EntityLayout>
@@ -94,6 +94,21 @@ If everyting is correctly configured and tagged, the user should see a list of c
         </EntityLayout.Route>
       </EntityLayout>
     )
+    ```
+    You can setup some default *viewing* options on the `EntityKwirthMetricsContent` component, so, when the entity loads the default options will be set. These options are:
+    - `depth`
+    - `width`
+    - `interval`
+    - `chart`
+    (The meaning of these properties are explained at the end of this document)
+
+    If you want to setup a long-running histogram as a default chart for your entities you should setup your entity page like this:
+    ```jsx
+      ...
+      <EntityLayout.Route if={isKwirthAvailable} path="/kwirthmetrics" title="KwirthMetrics">
+        <EntityKwirthMetricsContent allMetrics={true} enableRestart={false} depth={100} chart={'bar'}/>
+      </EntityLayout.Route>
+      ...
     ```
 
 2. Label your catalog-info according to one of these two startegies:

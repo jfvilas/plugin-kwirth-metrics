@@ -18,7 +18,7 @@ import useAsync from 'react-use/esm/useAsync'
 
 import { Progress, WarningPanel } from '@backstage/core-components'
 import { alertApiRef, useApi } from '@backstage/core-plugin-api'
-import { isKwirthAvailable, ClusterValidPods, PodData, IStatusLine, MetricDefinition, ANNOTATION_BACKSTAGE_KUBERNETES_LABELID, ANNOTATION_BACKSTAGE_KUBERNETES_LABELSELECTOR, IBackendInfo } from '@jfvilas/plugin-kwirth-common'
+import { isKwirthAvailable, ClusterValidPods, PodData, IStatusLine, MetricDefinition, ANNOTATION_BACKSTAGE_KUBERNETES_LABELID, ANNOTATION_BACKSTAGE_KUBERNETES_LABELSELECTOR, IBackendInfo, getPodList, getContainerList } from '@jfvilas/plugin-kwirth-common'
 import { MissingAnnotationEmptyState, useEntity } from '@backstage/plugin-catalog-react'
 
 // kwirthMetrics
@@ -27,11 +27,7 @@ import { accessKeySerialize, MetricsConfigModeEnum, MetricsMessage, InstanceMess
 import { ClusterList, ObjectSelector, ShowError, StatusLog, KwirthNews, ComponentNotFound, ErrorType } from '@jfvilas/plugin-kwirth-frontend'
 
 // Material-UI
-import { Box, Checkbox, FormControl, Grid, MenuItem, Select } from '@material-ui/core'
-import { Card, CardHeader, CardContent } from '@material-ui/core'
-import Divider from '@material-ui/core/Divider'
-import IconButton from '@material-ui/core/IconButton'
-import Typography from '@material-ui/core/Typography'
+import { Box, Checkbox, FormControl, Grid, MenuItem, Select, Card, CardHeader, CardContent, Divider, IconButton, Typography, Tooltip as MUITooltip } from '@material-ui/core'
 
 // Icons
 import PlayIcon from '@material-ui/icons/PlayArrow'
@@ -47,14 +43,20 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, Legend, Line,
 import { IMetricsOptions } from './IOptions'
 import { Options } from './Options'
 
-export const EntityKwirthMetricsContent = (props:{
-        allMetrics: boolean
-        enableRestart: boolean
-    }) => { 
+export interface IProps {
+    allMetrics: boolean
+    enableRestart: boolean
+    width?: number
+    depth?: number
+    interval?: number
+    chart?: string
+}
+
+export const EntityKwirthMetricsContent: React.FC<IProps> = (props:IProps) => { 
     const kwirthMetricsApi = useApi(kwirthMetricsApiRef)
     const alertApi = useApi(alertApiRef)
     const { entity } = useEntity()
-    const [clusterValidPods, setClusterValidPods] = useState<ClusterValidPods[]>([])
+    const [validClusters, setValidClusters] = useState<ClusterValidPods[]>([])
     const [selectedClusterName, setSelectedClusterName] = useState('')
     const [selectedNamespaces, setSelectedNamespaces] = useState<string[]>([])
     const [selectedPodNames, setSelectedPodNames] = useState<string[]>([])
@@ -68,7 +70,15 @@ export const EntityKwirthMetricsContent = (props:{
     const [statusMessages, setStatusMessages] = useState<IStatusLine[]>([])
     const [websocket, setWebsocket] = useState<WebSocket>()
     const [instance, setInstance] = useState<string>()
-    const kwirthMetricsOptionsRef = useRef<IMetricsOptions>({depth:10, width:3, interval:10, chart:'area', aggregate:false, merge:false, stack:false })
+    const kwirthMetricsOptionsRef = useRef<IMetricsOptions>({
+        depth: props.depth !==undefined? props.depth : 10,
+        width: props.width !==undefined? props.width : 3,
+        interval: props.interval !==undefined? props.interval : 15,
+        chart: props.chart !==undefined? props.chart : 'area',
+        aggregate:false,
+        merge:false,
+        stack:false
+    })
     const [showStatusDialog, setShowStatusDialog] = useState(false)
     const [statusLevel, setStatusLevel] = useState<SignalMessageLevelEnum>(SignalMessageLevelEnum.INFO)
     const [backendVersion, setBackendVersion ] = useState<string>('')
@@ -89,7 +99,7 @@ export const EntityKwirthMetricsContent = (props:{
         let reqScopes = [InstanceConfigScopeEnum.STREAM]
         if (props.enableRestart) reqScopes.push(InstanceConfigScopeEnum.RESTART)
         let data = await kwirthMetricsApi.requestAccess(entity,'metrics', reqScopes)
-        setClusterValidPods(data)
+        setValidClusters(data)
     })
 
     const colours = [
@@ -146,7 +156,7 @@ export const EntityKwirthMetricsContent = (props:{
         paused.current=true
     }
 
-    const clickStop = () => {
+    const onClickStop = () => {
         setStarted(false)
         setStopped(true)
         paused.current=false
@@ -154,18 +164,41 @@ export const EntityKwirthMetricsContent = (props:{
     }
 
     const onSelectCluster = async (clusterName:string|undefined) => {
+        if (started) onClickStop()
+        // if (clusterName) {
+        //     setSelectedClusterName(clusterName)
+        //     setSelectedNamespaces([])
+        //     setSelectedPodNames([])
+        //     setSelectedContainerNames([])
+        //     setMetricsMessages([])
+        //     setStatusMessages([])
+        //     let cluster = clusterValidPods.find(cluster => cluster.name === clusterName)
+        //     if (cluster && cluster.metrics) {
+        //         cluster.metrics.sort( (a,_b) => a.metric.startsWith('kwirth')? -1:1)
+        //         setAllMetrics(cluster.metrics)
+        //     }
+        // }
         if (clusterName) {
             setSelectedClusterName(clusterName)
-            setSelectedNamespaces([])
             setSelectedPodNames([])
             setSelectedContainerNames([])
-            setMetricsMessages([])
             setStatusMessages([])
-            clickStop()
-            let cluster = clusterValidPods.find(cluster => cluster.name === clusterName)
-            if (cluster && cluster.metrics) {
+            let cluster = validClusters.find(cluster => cluster.name === clusterName)
+
+            if (cluster && cluster.pods && cluster.metrics) {
                 cluster.metrics.sort( (a,_b) => a.metric.startsWith('kwirth')? -1:1)
                 setAllMetrics(cluster.metrics)
+
+                let validNamespaces = Array.from(new Set(cluster.pods.map(pod => pod.namespace)))
+                if (validNamespaces.length === 1) {
+                    setSelectedNamespaces(validNamespaces)
+                    let podList = getPodList (cluster.pods, validNamespaces)
+                    setSelectedPodNames(podList.map(pod => pod.name))
+                    setSelectedContainerNames(getContainerList(cluster.pods, validNamespaces, podList.map(pod => pod.name)))
+                }
+                else {
+                    setSelectedNamespaces([])
+                }
             }
         }
     }
@@ -260,7 +293,7 @@ export const EntityKwirthMetricsContent = (props:{
     }
 
     const websocketOnOpen = (ws:WebSocket) => {
-        let cluster=clusterValidPods.find(cluster => cluster.name===selectedClusterName)
+        let cluster=validClusters.find(cluster => cluster.name===selectedClusterName)
         if (!cluster) {
             addMessage(SignalMessageLevelEnum.ERROR, 'Cluster not found')
             return
@@ -312,7 +345,7 @@ export const EntityKwirthMetricsContent = (props:{
     }
 
     const startMetricsViewer = () => {
-        let cluster=clusterValidPods.find(cluster => cluster.name===selectedClusterName)
+        let cluster=validClusters.find(cluster => cluster.name===selectedClusterName)
         if (!cluster) {
             addMessage(SignalMessageLevelEnum.ERROR, 'Cluster not found')
             return
@@ -349,7 +382,7 @@ export const EntityKwirthMetricsContent = (props:{
  
     const actionButtons = () => {
         let hasStreamKey = false, hasRestartKey = false
-        let cluster=clusterValidPods.find(cluster => cluster.name===selectedClusterName)
+        let cluster=validClusters.find(cluster => cluster.name===selectedClusterName)
         if (cluster) {
             hasStreamKey = Boolean(cluster.accessKeys.has(InstanceConfigScopeEnum.STREAM))
             hasRestartKey = Boolean(cluster.accessKeys.get(InstanceConfigScopeEnum.RESTART))
@@ -367,7 +400,7 @@ export const EntityKwirthMetricsContent = (props:{
             <IconButton onClick={clickPause} title="Pause" disabled={!((started && !paused.current) && selectedPodNames.length === 0)}>
                 <PauseIcon />
             </IconButton>
-            <IconButton onClick={clickStop} title="Stop" disabled={stopped || selectedPodNames.length === 0}>
+            <IconButton onClick={onClickStop} title="Stop" disabled={stopped || selectedPodNames.length === 0}>
                 <StopIcon />
             </IconButton>
         </>
@@ -429,7 +462,7 @@ export const EntityKwirthMetricsContent = (props:{
         return resultSeries
     }
 
-    const addChart = (options: IMetricsOptions, metric:string, names:string[], series:any[], colour:string) => {
+    const addChart = (options: IMetricsOptions, metric:MetricDefinition, names:string[], series:any[], colour:string) => {
         var result = <></>
         var mergedSeries = mergeSeries(names, series)
 
@@ -520,9 +553,20 @@ export const EntityKwirthMetricsContent = (props:{
                 break
         }
 
+        let title = metric.metric.replaceAll('_',' ')
+        title = title[0].toLocaleUpperCase()+ title.substring(1)
+        title = title.replaceAll('cpu', 'CPU')
+        title = title.replaceAll(' fs ', ' FS ')
+        title = title.replaceAll(' io ', ' IO ')
+        title = title.replaceAll('oom', 'OOM')
+        title = title.replaceAll('nvm', 'NVM')
+        title = title.replaceAll('rss', 'RSS')
+        title = title.replaceAll('failcnt', 'fail count')
         return (
-            <Grid style={{width:'100%', marginBottom:8}}>
-                <Typography align='center'>{metric}</Typography>
+            <Grid style={{width:'100%', marginBottom:32}}>
+                <MUITooltip title={<Typography style={{fontSize:12}}><b>{metric.metric}</b><br/><br/>{metric.help}</Typography>}>
+                    <Typography align='center'>{title}</Typography>
+                </MUITooltip>
                 <ResponsiveContainer height={height} key={metric+JSON.stringify(names)}>
                     {result}
                 </ResponsiveContainer>                        
@@ -539,6 +583,9 @@ export const EntityKwirthMetricsContent = (props:{
                     {started?<Typography>Waiting for first data, be patient...</Typography>:<Typography>Configure <b>chart options</b>, select some <b>metrics on top</b>, and <b>press PLAY</b> on top-right button to start viewing.</Typography>}
                 </>
         }
+
+        let cluster = validClusters.find(cluster => cluster.name === selectedClusterName)
+        if (!cluster) return
 
         let data:Map<string, Map<string, { timestamp:string, value:number}[]>> = new Map()
         for (let metricsMessage of metricsMessages) {
@@ -561,10 +608,11 @@ export const EntityKwirthMetricsContent = (props:{
             var allMetrics:string[] = Array.from(new Set(data.get(firstAsset)!.keys()))
 
             for (let metric of allMetrics) {
+                let metricDefinition = cluster.metrics?.find(m => m.metric === metric)!
                 var series = assetNames.map(an => {
                     return data.get(an)!.get(metric)
                 })
-                allCharts.push(<>{addChart(options, metric, assetNames, series, '')}</>)
+                allCharts.push(<>{addChart(options, metricDefinition, assetNames, series, '')}</>)
             }
 
             let rows = []
@@ -583,7 +631,8 @@ export const EntityKwirthMetricsContent = (props:{
             let allCharts = Array.from(data.keys()!).map( (asset, index)  =>  {
                 return Array.from(data.get(asset)?.keys()!).map ( metric => {
                     var serie:any=data.get(asset)?.get(metric)!
-                    return (<>{addChart(options, metric, [asset], [serie], colours[index])}</>)
+                    let metricDefinition = cluster.metrics?.find(m => m.metric === metric)!
+                    return (<>{addChart(options, metricDefinition, [asset], [serie], colours[index])}</>)
                 })
             })
 
@@ -620,7 +669,7 @@ export const EntityKwirthMetricsContent = (props:{
 
     const onClickRestart = () => {
         // we perform a route command from channel 'metrics' to channel 'ops'
-        let cluster=clusterValidPods.find(cluster => cluster.name===selectedClusterName)
+        let cluster=validClusters.find(cluster => cluster.name===selectedClusterName)
         if (!cluster) {
             addMessage(SignalMessageLevelEnum.ERROR,'No cluster selected')
             return
@@ -681,21 +730,21 @@ export const EntityKwirthMetricsContent = (props:{
             <MissingAnnotationEmptyState readMoreUrl='https://github.com/jfvilas/kwirth' annotation={[ANNOTATION_BACKSTAGE_KUBERNETES_LABELID, ANNOTATION_BACKSTAGE_KUBERNETES_LABELSELECTOR]}/>
         )}
 
-        { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length===0 &&
+        { isKwirthAvailable(entity) && !loading && validClusters && validClusters.length===0 &&
             <ComponentNotFound error={ErrorType.NO_CLUSTERS} entity={entity}/>
         }
 
-        { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length>0 && clusterValidPods.reduce((sum,cluster) => sum+cluster.pods.length, 0)===0 &&
+        { isKwirthAvailable(entity) && !loading && validClusters && validClusters.length>0 && validClusters.reduce((sum,cluster) => sum+cluster.pods.length, 0)===0 &&
             <ComponentNotFound error={ErrorType.NO_PODS} entity={entity}/>
         }
 
-        { isKwirthAvailable(entity) && !loading && clusterValidPods && clusterValidPods.length>0 && clusterValidPods.reduce((sum,cluster) => sum+cluster.pods.length, 0)>0 &&
+        { isKwirthAvailable(entity) && !loading && validClusters && validClusters.length>0 && validClusters.reduce((sum,cluster) => sum+cluster.pods.length, 0)>0 &&
             <Box sx={{ display: 'flex'}}>
                 <Box sx={{ width: '200px', maxWidth:'200px'}}>
                     <Grid container direction='column'>
                         <Grid item>
                             <Card>
-                                <ClusterList resources={clusterValidPods} selectedClusterName={selectedClusterName} onSelect={onSelectCluster}/>
+                                <ClusterList resources={validClusters} selectedClusterName={selectedClusterName} onSelect={onSelectCluster}/>
                             </Card>
                         </Grid>
                         <Grid item>
@@ -724,7 +773,7 @@ export const EntityKwirthMetricsContent = (props:{
                             <Grid container style={{alignItems:'end'}}>
                                 <Grid item style={{width:'66%'}}>
                                     <Typography style={{marginLeft:14}}>
-                                        <ObjectSelector cluster={clusterValidPods.find(cluster => cluster.name === selectedClusterName)!} onSelect={onSelectObject} disabled={selectedClusterName === '' || started || paused.current} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} scope={InstanceConfigScopeEnum.STREAM}/>
+                                        <ObjectSelector cluster={validClusters.find(cluster => cluster.name === selectedClusterName)!} onSelect={onSelectObject} disabled={selectedClusterName === '' || started || paused.current} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} scope={InstanceConfigScopeEnum.STREAM}/>
                                     </Typography>
                                 </Grid>
                                 <Grid item style={{width:'33%', marginLeft:0, marginBottom:6, maxWidth:'33%' }}>
