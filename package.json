@@ -1,6 +1,6 @@
 {
   "name": "@jfvilas/plugin-kwirth-metrics",
-  "version": "0.12.9",
+  "version": "0.13.1",
   "description": "Frontend plugin for viewing Kubernetes resource usage (metrics) in Backstage",
   "keywords": [
     "Backstage",
@@ -16,6 +16,7 @@
     "pluginId": "kwirt",
     "pluginPackages": [
       "@jfvilas/plugin-kwirth-metrics",
+      "@jfvilas/plugin-kwirth-frontend",
       "@jfvilas/plugin-kwirth-common",
       "@jfvilas/plugin-kwirth-backend"
     ]

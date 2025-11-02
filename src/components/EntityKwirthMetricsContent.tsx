@@ -25,6 +25,7 @@ import { MissingAnnotationEmptyState, useEntity } from '@backstage/plugin-catalo
 import { kwirthMetricsApiRef } from '../api'
 import { accessKeySerialize, MetricsConfigModeEnum, MetricsMessage, InstanceMessageActionEnum, InstanceMessageFlowEnum, InstanceConfigScopeEnum, InstanceConfigViewEnum, IInstanceMessage, InstanceMessageTypeEnum, ISignalMessage, SignalMessageLevelEnum, InstanceConfigObjectEnum, InstanceConfig, InstanceMessageChannelEnum, OpsCommandEnum, IOpsMessageResponse, IOpsMessage, IRouteMessage } from '@jfvilas/kwirth-common'
 import { ClusterList, ObjectSelector, ShowError, StatusLog, KwirthNews, ComponentNotFound, ErrorType } from '@jfvilas/plugin-kwirth-frontend'
+import { VERSION } from '../index'
 
 // Material-UI
 import { Box, Checkbox, FormControl, Grid, MenuItem, Select, Card, CardHeader, CardContent, Divider, IconButton, Typography, Tooltip as MUITooltip } from '@material-ui/core'
@@ -754,7 +755,7 @@ export const EntityKwirthMetricsContent: React.FC<IProps> = (props:IProps) => {
                         </Grid>
                         <Grid item>
                             <Card>
-                                <KwirthNews latestVersions={backendInfo} backendVersion={backendVersion}/>
+                                <KwirthNews latestVersions={backendInfo} backendVersion={backendVersion} ownVersion={VERSION}/>
                             </Card>
                         </Grid>
                     </Grid>
