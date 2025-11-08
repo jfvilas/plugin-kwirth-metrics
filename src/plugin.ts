@@ -17,6 +17,7 @@ import { kwirthMetricsApiRef, KwirthMetricsClient } from './api';
 import { createApiFactory, createPlugin, createRoutableExtension } from '@backstage/core-plugin-api';
 import { discoveryApiRef, fetchApiRef } from '@backstage/core-plugin-api';
 import { rootRouteRef } from './routes';
+import { IKwirthMetricsProps } from './components/EntityKwirthMetricsContent';
 
 export const kwirthMetricsPlugin = createPlugin({
   id: 'kwirthmetrics',  
@@ -35,13 +36,13 @@ export const kwirthMetricsPlugin = createPlugin({
   routes: {
     root: rootRouteRef
   }
-});
+})
 
-export const EntityKwirthMetricsContent = kwirthMetricsPlugin.provide(
+export const EntityKwirthMetricsContent : (props: IKwirthMetricsProps) => JSX.Element = kwirthMetricsPlugin.provide(
   createRoutableExtension({
     name: 'EntityKwirthMetricsContent',
     component: () =>
-      import('./components/EntityKwirthMetricsContent').then(m => m.EntityKwirthMetricsContent),
+      import('./components/EntityKwirthMetricsContent').then(m => m.EntityKwirthMetricsContent as (props: IKwirthMetricsProps) => JSX.Element),
     mountPoint: rootRouteRef
   })
-);
+)

@@ -10,6 +10,7 @@ import { IMetricsOptions, IOptions } from './IOptions'
 const Options = (props: IOptions) => {
     const [options, setOptions] = useState<IMetricsOptions>(props.metricsOptions)
 
+    console.log(options.interval)
     const handleChange = (change:any) => {
         var a = {...options,...change}
         setOptions(a)
@@ -42,12 +43,14 @@ const Options = (props: IOptions) => {
             </Grid>
 
             <Grid item >
-                <FormControlLabel style={{marginLeft:24}} label="Interval" labelPlacement='start' disabled={props.disabled} control={
+                <FormControlLabel style={{marginLeft:24}} label='Interval' labelPlacement='start' disabled={props.disabled} control={
                     <Select value={options.interval} onChange={(evt) => handleChange({interval:evt.target.value})} style={{width:80, marginLeft:16}} disabled={props.disabled}>
                         <MenuItem value={5}>5</MenuItem>
                         <MenuItem value={10}>10</MenuItem>
+                        <MenuItem value={15}>15</MenuItem>
                         <MenuItem value={30}>30</MenuItem>
                         <MenuItem value={60}>60</MenuItem>
+                        <MenuItem value={300}>300</MenuItem>
                     </Select>
                 } />
             </Grid>

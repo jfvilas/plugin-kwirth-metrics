@@ -44,7 +44,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, Legend, Line,
 import { IMetricsOptions } from './IOptions'
 import { Options } from './Options'
 
-export interface IProps {
+export interface IKwirthMetricsProps {
     allMetrics: boolean
     enableRestart: boolean
     width?: number
@@ -53,7 +53,7 @@ export interface IProps {
     chart?: string
 }
 
-export const EntityKwirthMetricsContent: React.FC<IProps> = (props:IProps) => { 
+export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:IKwirthMetricsProps) : JSX.Element => { 
     const kwirthMetricsApi = useApi(kwirthMetricsApiRef)
     const alertApi = useApi(alertApiRef)
     const { entity } = useEntity()
