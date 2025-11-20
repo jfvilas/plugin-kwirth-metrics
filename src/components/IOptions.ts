@@ -1,8 +1,10 @@
+import { ChartType } from "./MenuChart"
+
 export interface IMetricsOptions {
     width: number
     depth: number
     interval: number
-    chart: string
+    chart: ChartType
     aggregate: boolean
     merge: boolean
     stack: boolean

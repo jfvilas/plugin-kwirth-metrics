@@ -10,7 +10,6 @@ import { IMetricsOptions, IOptions } from './IOptions'
 const Options = (props: IOptions) => {
     const [options, setOptions] = useState<IMetricsOptions>(props.metricsOptions)
 
-    console.log(options.interval)
     const handleChange = (change:any) => {
         var a = {...options,...change}
         setOptions(a)
@@ -38,6 +37,8 @@ const Options = (props: IOptions) => {
                         <MenuItem value={2}>2</MenuItem>
                         <MenuItem value={3}>3</MenuItem>
                         <MenuItem value={4}>4</MenuItem>
+                        <MenuItem value={5}>5</MenuItem>
+                        <MenuItem value={6}>6</MenuItem>
                     </Select>
                 } />
             </Grid>

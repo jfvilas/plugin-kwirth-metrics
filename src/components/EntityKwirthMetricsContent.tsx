@@ -25,10 +25,9 @@ import { MissingAnnotationEmptyState, useEntity } from '@backstage/plugin-catalo
 import { kwirthMetricsApiRef } from '../api'
 import { accessKeySerialize, MetricsConfigModeEnum, MetricsMessage, InstanceMessageActionEnum, InstanceMessageFlowEnum, InstanceConfigScopeEnum, InstanceConfigViewEnum, IInstanceMessage, InstanceMessageTypeEnum, ISignalMessage, SignalMessageLevelEnum, InstanceConfigObjectEnum, InstanceConfig, InstanceMessageChannelEnum, OpsCommandEnum, IOpsMessageResponse, IOpsMessage, IRouteMessage } from '@jfvilas/kwirth-common'
 import { ClusterList, ObjectSelector, ShowError, StatusLog, KwirthNews, ComponentNotFound, ErrorType } from '@jfvilas/plugin-kwirth-frontend'
-import { VERSION } from '../index'
 
 // Material-UI
-import { Box, Checkbox, FormControl, Grid, MenuItem, Select, Card, CardHeader, CardContent, Divider, IconButton, Typography, Tooltip as MUITooltip } from '@material-ui/core'
+import { Box, Checkbox, FormControl, Grid, MenuItem, Select, Card, CardHeader, IconButton, Typography } from '@material-ui/core'
 
 // Icons
 import PlayIcon from '@material-ui/icons/PlayArrow'
@@ -40,9 +39,11 @@ import ErrorIcon from '@material-ui/icons/Error'
 import RefreshIcon from '@material-ui/icons/Refresh'
 import KwirthMetricsLogo from '../assets/kwirthmetrics-logo.svg'
 
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { IMetricsOptions } from './IOptions'
 import { Options } from './Options'
+import { Chart, IMetricViewConfig, METRICSCOLOURS } from './Chart'
+import { ChartType } from './MenuChart'
+import { VERSION } from '../version'
 
 export interface IKwirthMetricsProps {
     allMetrics: boolean
@@ -50,7 +51,10 @@ export interface IKwirthMetricsProps {
     width?: number
     depth?: number
     interval?: number
-    chart?: string
+    chart?: ChartType
+    hideVersion?: boolean
+    excludeContainers?: string[]
+    defaultMetrics?: string[]
 }
 
 export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:IKwirthMetricsProps) : JSX.Element => { 
@@ -62,7 +66,7 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
     const [selectedNamespaces, setSelectedNamespaces] = useState<string[]>([])
     const [selectedPodNames, setSelectedPodNames] = useState<string[]>([])
     const [selectedContainerNames, setSelectedContainerNames] = useState<string[]>([])
-    const [selectedMetrics, setSelectedMetrics] = useState<string[]>([])
+    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(props.defaultMetrics? props.defaultMetrics : [])
     const [showError, setShowError] = useState('')
     const [started, setStarted] = useState(false)
     const [stopped, setStopped] = useState(true)
@@ -75,7 +79,7 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
         depth: props.depth !==undefined? props.depth : 10,
         width: props.width !==undefined? props.width : 3,
         interval: props.interval !==undefined? props.interval : 15,
-        chart: props.chart !==undefined? props.chart : 'area',
+        chart: props.chart !==undefined? props.chart : ChartType.AreaChart,
         aggregate:false,
         merge:false,
         stack:false
@@ -103,41 +107,6 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
         setValidClusters(data)
     })
 
-    const colours = [
-        "#6e5bb8", // morado oscuro
-        "#4a9076", // verde oscuro
-        "#b56c52", // naranja oscuro
-        "#7f6b97", // color lavanda oscuro
-        "#b0528f", // rosa oscuro
-        "#b0b052", // amarillo oscuro
-        "#b05252", // rojo oscuro
-        "#5285b0", // azul oscuro
-        "#a38ad6", // morado pastel
-        "#89c1a0", // verde pastel
-        "#e4a28a", // naranja pastel
-        "#b09dbd", // lavanda pastel
-        "#e2a4c6", // rosa pastel
-        "#c5c89e", // amarillo pastel
-        "#e2a4a4", // rojo pastel
-        "#90b7e2", // azul pastel
-        "#f8d5e1", // rosa claro pastel
-        "#b2d7f0", // azul muy claro pastel
-        "#f7e1b5", // amarillo muy claro pastel
-        "#d0f0c0", // verde muy claro pastel
-        "#f5b0a1", // coral pastel
-        "#d8a7db", // lavanda muy claro pastel
-        "#f4c2c2", // rosa suave pastel
-        "#e6c7b9", // marron claro pastel
-        "#f0e2b6", // crema pastel
-        "#a7c7e7", // azul palido pastel
-        "#f5e6a5", // amarillo palido pastel
-        "#e3c8f5", // lilas pastel
-        "#d0c4e8", // lila palido pastel
-        "#b8d8b8", // verde claro pastel
-        "#d2ebfa", // azul muy claro pastel
-        "#f1c1d2"  // rosa bebe pastel
-    ]
-    
     const clickStart = () => {
         if (!paused.current) {
             setMetricsMessages([])
@@ -166,19 +135,6 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
 
     const onSelectCluster = async (clusterName:string|undefined) => {
         if (started) onClickStop()
-        // if (clusterName) {
-        //     setSelectedClusterName(clusterName)
-        //     setSelectedNamespaces([])
-        //     setSelectedPodNames([])
-        //     setSelectedContainerNames([])
-        //     setMetricsMessages([])
-        //     setStatusMessages([])
-        //     let cluster = clusterValidPods.find(cluster => cluster.name === clusterName)
-        //     if (cluster && cluster.metrics) {
-        //         cluster.metrics.sort( (a,_b) => a.metric.startsWith('kwirth')? -1:1)
-        //         setAllMetrics(cluster.metrics)
-        //     }
-        // }
         if (clusterName) {
             setSelectedClusterName(clusterName)
             setSelectedPodNames([])
@@ -195,7 +151,7 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
                     setSelectedNamespaces(validNamespaces)
                     let podList = getPodList (cluster.pods, validNamespaces)
                     setSelectedPodNames(podList.map(pod => pod.name))
-                    setSelectedContainerNames(getContainerList(cluster.pods, validNamespaces, podList.map(pod => pod.name)))
+                    setSelectedContainerNames(getContainerList(cluster.pods, validNamespaces, podList.map(pod => pod.name), props.excludeContainers || []))
                 }
                 else {
                     setSelectedNamespaces([])
@@ -377,6 +333,7 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
     }
 
     const onChangeOptions = (options:IMetricsOptions) => {
+        console.log('change')
         kwirthMetricsOptionsRef.current=options
         setRefresh(Math.random())
     }
@@ -445,135 +402,6 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
         setStatusMessages(statusMessages.filter(m=> m.level!==level))
         setShowStatusDialog(false)
     }
-    
-    const mergeSeries = (names:string[], series:any[]) => {
-        if (!names || names.length===0) return []
-        var resultSeries:any[] = []
-
-        for (var i=0; i<series[0].length; i++) {
-            var item: { [key: string]: string|number } = {}
-            for (var j=0; j<series.length; j++ ) {
-                if (series[j][i]) {
-                    item['timestamp'] =  series[0][i].timestamp
-                    item[names[j]] = series[j][i].value
-                }
-            }
-            resultSeries.push(item)
-        }
-        return resultSeries
-    }
-
-    const addChart = (options: IMetricsOptions, metric:MetricDefinition, names:string[], series:any[], colour:string) => {
-        var result = <></>
-        var mergedSeries = mergeSeries(names, series)
-
-        const renderLabel = (data:any) => {
-            var values:any[] = series.map (s => s[data.index])
-            var total:number =values.reduce((acc,value) => acc+value.value, 0)
-            return <text x={data.x + data.width/3.5} y={data.y-10}>{total.toPrecision(3).replace(/0+$/, "")}</text>
-        }
-        let height=300
-
-        switch (options.chart) {
-            case 'value':
-                height=40+series.length*80
-                result = (
-                    <Grid>
-                        {
-                            <Typography>
-                                { series.map( (serie,index) => {
-                                    return (<>
-                                        <Typography >
-                                            {serie[serie.length-1].value}
-                                        </Typography>
-                                        <Typography >
-                                            {names[index]}
-                                        </Typography>
-                                    </>)
-                                })}
-                            </Typography>
-                        }
-                    </Grid>
-
-                )
-                break
-            case 'line':
-                result = (
-                    <LineChart data={mergedSeries}>
-                        <CartesianGrid strokeDasharray="3 3"/>
-                        <XAxis dataKey="timestamp" fontSize={8}/>
-                        <YAxis />
-                        <Tooltip />
-                        <Legend/>
-                        { series.map ((_serie,index) => <Line key={index} name={names[index]} type="monotone" dataKey={names[index]} stroke={series.length===1?colour:colours[index]} activeDot={{ r: 8 }} />) }
-                    </LineChart>
-                )
-                break
-            case 'area':
-                result = (
-                    <AreaChart data={mergedSeries}>
-                        <defs>
-                            {
-                                series.map( (_serie,index) => {
-                                    return (
-                                        <linearGradient key={index} id={`color${series.length===1?colour:colours[index]}`} x1='0' y1='0' x2='0' y2='1'>
-                                            <stop offset='7%' stopColor={series.length===1?colour:colours[index]} stopOpacity={0.8}/>
-                                            <stop offset='93%' stopColor={series.length===1?colour:colours[index]} stopOpacity={0}/>
-                                        </linearGradient>
-                                    )
-                                })
-                            }
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3"/>
-                        <XAxis dataKey="timestamp" fontSize={8}/>
-                        <YAxis />
-                        <Tooltip />
-                        <Legend/>
-                        { series.map ((_serie,index) => 
-                            <Area key={index} name={names[index]} type="monotone" {...(options.stack? {stackId:"1"}:{})} dataKey={names[index]} stroke={series.length===1?colour:colours[index]} fill={`url(#color${series.length===1?colour:colours[index]})`}/> )}
-                    </AreaChart>
-                )
-                break
-            case 'bar':
-                result = (
-                    <BarChart data={mergedSeries}>
-                        <CartesianGrid strokeDasharray="3 3"/>
-                        <XAxis dataKey="timestamp" fontSize={8}/>
-                        <YAxis />
-                        <Tooltip/>
-                        <Legend/>
-                        { series.map ((_serie,index) =>
-                            <Bar name={names[index]} {...(options.stack? {stackId:"1"}:{})} dataKey={names[index]} stroke={series.length===1?colour:colours[index]} fill={series.length===1?colour:colours[index]}>
-                                { index === series.length-1 && series.length > 1 ? <LabelList dataKey={names[index]} position='insideTop' content={ renderLabel }/> : null }
-                            </Bar>
-                        )}
-                    </BarChart>
-                )
-                break
-            default:
-                break
-        }
-
-        let title = metric.metric.replaceAll('_',' ')
-        title = title[0].toLocaleUpperCase()+ title.substring(1)
-        title = title.replaceAll('cpu', 'CPU')
-        title = title.replaceAll(' fs ', ' FS ')
-        title = title.replaceAll(' io ', ' IO ')
-        title = title.replaceAll('oom', 'OOM')
-        title = title.replaceAll('nvm', 'NVM')
-        title = title.replaceAll('rss', 'RSS')
-        title = title.replaceAll('failcnt', 'fail count')
-        return (
-            <Grid style={{width:'100%', marginBottom:32}}>
-                <MUITooltip title={<Typography style={{fontSize:12}}><b>{metric.metric}</b><br/><br/>{metric.help}</Typography>}>
-                    <Typography align='center'>{title}</Typography>
-                </MUITooltip>
-                <ResponsiveContainer height={height} key={metric+JSON.stringify(names)}>
-                    {result}
-                </ResponsiveContainer>                        
-            </Grid>
-        )
-    }
 
     const showMetrics = (options: IMetricsOptions) => {
         if (!metricsMessages || metricsMessages.length === 0) {
@@ -610,10 +438,12 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
 
             for (let metric of allMetrics) {
                 let metricDefinition = cluster.metrics?.find(m => m.metric === metric)!
-                var series = assetNames.map(an => {
-                    return data.get(an)!.get(metric)
+                let series = assetNames.map(assetName => {
+                    return data.get(assetName)!.get(metric)!
                 })
-                allCharts.push(<>{addChart(options, metricDefinition, assetNames, series, '')}</>)
+                allCharts.push(
+                    <Chart key={metricDefinition.metric} metricDefinition={metricDefinition} names={assetNames} series={series} colour={''} chartType={options.chart} stack={options.stack} numSeries={series.length} tooltip={true} labels={true} viewConfig={{} as IMetricViewConfig}/>
+                )
             }
 
             let rows = []
@@ -622,7 +452,7 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
             }
             return (<>
                 {rows.map((row, index) => (
-                    <div key={index} style={{ display: 'flex', justifyContent: 'space-around' }}>
+                    <div key={index} style={{ width:'100%', display: 'flex', justifyContent: 'space-around', gap:8, marginTop: 12 }}>
                         {row}
                     </div>
                 ))}
@@ -631,9 +461,9 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
         else {
             let allCharts = Array.from(data.keys()!).map( (asset, index)  =>  {
                 return Array.from(data.get(asset)?.keys()!).map ( metric => {
-                    var serie:any=data.get(asset)?.get(metric)!
+                    var series = data.get(asset)?.get(metric)!
                     let metricDefinition = cluster.metrics?.find(m => m.metric === metric)!
-                    return (<>{addChart(options, metricDefinition, [asset], [serie], colours[index])}</>)
+                    return <Chart key={metricDefinition.metric} metricDefinition={metricDefinition} names={[asset]} series={[series]} colour={METRICSCOLOURS[index]} chartType={options.chart} stack={options.stack} numSeries={series.length} labels={true} tooltip={true} viewConfig={{} as IMetricViewConfig}/>
                 })
             })
 
@@ -646,7 +476,7 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
             }
             return (<>
                 {rows.map((row, index) => (
-                    <div key={index} style={{ display: 'flex', justifyContent: 'space-around' }}>
+                    <div key={index} style={{ width:'100%', display: 'flex', justifyContent: 'space-around', gap:8, marginTop: 12 }}>
                         {row}
                     </div>
                 ))}
@@ -753,11 +583,13 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
                                 <Options metricsOptions={kwirthMetricsOptionsRef.current!} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} onChange={onChangeOptions} disabled={selectedNamespaces.length === 0 || paused.current}/>
                             </Card>
                         </Grid>
-                        <Grid item>
-                            <Card>
-                                <KwirthNews latestVersions={backendInfo} backendVersion={backendVersion} ownVersion={VERSION}/>
-                            </Card>
-                        </Grid>
+                        {!props.hideVersion &&
+                            <Grid item>
+                                <Card>
+                                    <KwirthNews latestVersions={backendInfo} backendVersion={backendVersion} ownVersion={VERSION}/>
+                                </Card>
+                            </Grid>
+                        }
                     </Grid>
                 </Box>
 
@@ -768,13 +600,13 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
                     }
 
                     { selectedClusterName && <>
-                        <Card style={{marginTop:-8}}>
+                        <Card style={{marginTop:-8, marginBottom:8}}>
                             <CardHeader title={statusButtons(selectedClusterName)} style={{marginTop:-4, marginBottom:4, flexShrink:0}} action={actionButtons()} />
                             
                             <Grid container style={{alignItems:'end'}}>
                                 <Grid item style={{width:'66%'}}>
                                     <Typography style={{marginLeft:14}}>
-                                        <ObjectSelector cluster={validClusters.find(cluster => cluster.name === selectedClusterName)!} onSelect={onSelectObject} disabled={selectedClusterName === '' || started || paused.current} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} scope={InstanceConfigScopeEnum.STREAM}/>
+                                        <ObjectSelector cluster={validClusters.find(cluster => cluster.name === selectedClusterName)!} onSelect={onSelectObject} disabled={selectedClusterName === '' || started || paused.current} selectedNamespaces={selectedNamespaces} selectedPodNames={selectedPodNames} selectedContainerNames={selectedContainerNames} scope={InstanceConfigScopeEnum.STREAM} excludeCotainers={props.excludeContainers}/>
                                     </Typography>
                                 </Grid>
                                 <Grid item style={{width:'33%', marginLeft:0, marginBottom:6, maxWidth:'33%' }}>
@@ -792,13 +624,11 @@ export const EntityKwirthMetricsContent: React.FC<IKwirthMetricsProps> = (props:
                                     </FormControl>
                                 </Grid>
                             </Grid>
-
-                            <Divider/>
-                            <CardContent style={{ overflow: 'auto' }}>
-                                { showMetrics(kwirthMetricsOptionsRef.current) }
-                            </CardContent>
                         </Card>
+                        { showMetrics(kwirthMetricsOptionsRef.current) }
                     </>}
+
+
                 </Box>                
             </Box>
         }

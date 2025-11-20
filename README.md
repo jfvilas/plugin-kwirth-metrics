@@ -74,44 +74,63 @@ If everyting is correctly configured and tagged, the user should see a list of c
 
 
 ## Configuration: Entity Pages
-1. Add the KwirthMetrics plugin as a tab in your Entity pages:
 
-    Firstly, import the plugin module.
+#### 1. Add the KwirthMetrics plugin as a tab in your Entity pages:
 
-    ```typescript
-    // In packages/app/src/components/catalog/EntityPage.tsx
-    import { EntityKwirthMetricsContent, isKwirthAvailable } from '@jfvilas/plugin-kwirth-metrics';
-    ```
+Firstly, import the plugin module.
 
-    Then, add a tab to your EntityPage (the 'if' is optional, you can keep the 'KwirthMetrics' tab always visible if you prefer to do it that way).
-    ```jsx
-    // Note: Add to any other Pages as well (e.g. defaultEntityPage or webSiteEntityPage, for example)
-    const serviceEntityPage = (
-      <EntityLayout>
-        {/* other tabs... */}
-        <EntityLayout.Route if={isKwirthAvailable} path="/kwirthmetrics" title="KwirthMetrics">
-          <EntityKwirthMetricsContent allMetrics={true} enableRestart={false} />
-        </EntityLayout.Route>
-      </EntityLayout>
-    )
-    ```
-    You can setup some default *viewing* options on the `EntityKwirthMetricsContent` component, so, when the entity loads the default options will be set. These options are:
+```typescript
+// In packages/app/src/components/catalog/EntityPage.tsx
+import { EntityKwirthMetricsContent, isKwirthAvailable } from '@jfvilas/plugin-kwirth-metrics';
+```
+
+Then, add a tab to your EntityPage (the 'if' is optional, you can keep the 'KwirthMetrics' tab always visible if you prefer to do it that way).
+
+```jsx
+// Note: Add to any other Pages as well (e.g. defaultEntityPage or webSiteEntityPage, for example)
+const serviceEntityPage = (
+  <EntityLayout>
+    {/* other tabs... */}
+    <EntityLayout.Route if={isKwirthAvailable} path="/kwirthmetrics" title="KwirthMetrics">
+      <EntityKwirthMetricsContent allMetrics={true} enableRestart={false} />
+    </EntityLayout.Route>
+  </EntityLayout>
+)
+```
+
+You can setup some default *viewing* options on the `EntityKwirthMetricsContent` component, so, when the entity loads the default options will be set. These options are:
     - `depth`
     - `width`
     - `interval`
     - `chart`
-    (The meaning of these properties are explained at the end of this document)
+(The meaning of these properties are explained at the end of this document)
 
-    If you want to setup a long-running histogram as a default chart for your entities you should setup your entity page like this:
-    ```jsx
-      ...
-      <EntityLayout.Route if={isKwirthAvailable} path="/kwirthmetrics" title="KwirthMetrics">
-        <EntityKwirthMetricsContent allMetrics={true} enableRestart={false} depth={100} chart={'bar'}/>
-      </EntityLayout.Route>
-      ...
-    ```
+If you want to setup a long-running histogram as a default chart for your entities you should setup your entity page like this:
 
-2. Label your catalog-info according to one of these two startegies:
+```jsx
+  ...
+  <EntityLayout.Route if={isKwirthAvailable} path="/kwirthmetrics" title="KwirthMetrics">
+    <EntityKwirthMetricsContent allMetrics={true} enableRestart={false} depth={100} chart={'bar'}/>
+  </EntityLayout.Route>
+  ...
+```
+
+You can also set some behaviour options for the plugin:
+  - `hideVersion` (optional `boolean`) if set to `true`, version information updates will not be shown.
+  - `excludeContainers` (optional `string[]`), an array of container names that will be excluded from visualization. For example, if you have pods that include sidecars, you can exclude sidecard log messages using this property. What follows is an example on how to use these properties:
+  - `defaultMetrics` (optional `boolean`) if set to `true`, version information updates will not be shown.
+
+
+  ```jsx
+    ...
+    <EntityLayout.Route if={isKwirthAvailable} path="/kwirthlog" title="KwirthLog">
+      <EntityKwirthLogContent hideVersion excludeContainers={['istio-proxy', 'nginx']} defaultMetrics={['kwirth_container_cpu_percentage', 'kwirth_container_memory_percentage']} />
+    </EntityLayout.Route>
+    ...
+  ```
+
+#### 2. Label your catalog-info
+Use one of these startegies:
 
 - **Strategy 1: one-to-one**. Add `backstage.io/kubernetes-id` annotation to your `catalog-info.yaml` for the entities deployed to Kubernetes you want to work with on Backstage. This is the same annotation that the Kubernetes core plugin uses, so, maybe you already have added it to your components. Exmaple:
 

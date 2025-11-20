@@ -1,6 +1,6 @@
 {
   "name": "@jfvilas/plugin-kwirth-metrics",
-  "version": "0.13.4",
+  "version": "0.13.5",
   "description": "Frontend plugin for viewing Kubernetes resource usage (metrics) in Backstage",
   "keywords": [
     "Backstage",
@@ -92,3 +92,4 @@
     "react-router-dom": "6.0.0-beta.0 || ^6.3.0"
   }
 }
+
